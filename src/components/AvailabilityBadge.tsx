@@ -44,8 +44,8 @@ export default function AvailabilityBadge({ stand, size = 'sm' }: { stand: Stand
       <span className={`inline-flex items-center gap-1.5 ${size === 'md' ? 'px-3 py-1.5 text-sm' : 'px-2 py-0.5 text-xs'} rounded-full border font-medium ${colorClass}`}>
         <span className={`w-2 h-2 rounded-full bg-green-500 ${freshness === 'fresh' ? 'status-pulse' : ''}`} />
         Items Available
-        {timeSince && size === 'md' && (
-          <span className="text-[10px] font-normal opacity-75">· {timeSince} {source}</span>
+        {timeSince && (
+          <span className="text-[10px] font-normal opacity-75">· {timeSince}{size === 'md' && source ? ` ${source}` : ''}</span>
         )}
       </span>
     );
@@ -56,7 +56,7 @@ export default function AvailabilityBadge({ stand, size = 'sm' }: { stand: Stand
       <span className={`inline-flex items-center gap-1.5 ${size === 'md' ? 'px-3 py-1.5 text-sm' : 'px-2 py-0.5 text-xs'} rounded-full border font-medium bg-red-50 text-red-700 border-red-200`}>
         <span className="w-2 h-2 rounded-full bg-red-400" />
         Sold Out
-        {timeSince && size === 'md' && (
+        {timeSince && (
           <span className="text-[10px] font-normal opacity-75">· {timeSince}</span>
         )}
       </span>

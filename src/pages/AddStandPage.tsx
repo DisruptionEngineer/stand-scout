@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Plus, Check, Download, Loader2 } from 'lucide-react';
+import { Plus, Check, Download, Loader2, Camera, X } from 'lucide-react';
 import { Category } from '../data/types';
-import { createStand } from '../lib/api';
+import { createStand, uploadStandPhoto } from '../lib/api';
 
 export default function AddStandPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [newStandId, setNewStandId] = useState<string | null>(null);
   const [standName, setStandName] = useState('');
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [form, setForm] = useState({
     name: '',
     ownerName: '',
@@ -50,8 +52,8 @@ export default function AddStandPage() {
       ownerName: form.ownerName,
       description: form.description,
       address: form.address,
-      latitude: 38.43 + (Math.random() - 0.5) * 0.2, // placeholder until map pin
-      longitude: -78.87 + (Math.random() - 0.5) * 0.2,
+      latitude: 41.2834 + (Math.random() - 0.5) * 0.05, // Mantua OH area, placeholder until map pin
+      longitude: -81.2232 + (Math.random() - 0.5) * 0.05,
       phone: form.phone,
       website: form.website || undefined,
       categories: form.categories,
@@ -62,6 +64,10 @@ export default function AddStandPage() {
     });
     setSubmitting(false);
     if (result) {
+      // Upload photos if any
+      for (const file of photoFiles) {
+        await uploadStandPhoto(result.id, file);
+      }
       setNewStandId(result.id);
       setStandName(form.name);
       setSubmitted(true);
@@ -222,6 +228,56 @@ export default function AddStandPage() {
                 />
                 <p className="text-xs text-earth-light mt-1">Comma-separated list of what you typically sell</p>
               </div>
+            </div>
+          </div>
+
+          {/* Photos */}
+          <div className="bg-white rounded-2xl shadow-sm border border-sage-dark/20 p-6">
+            <h2 className="text-sm font-semibold text-earth uppercase tracking-wider mb-4">Photos (optional)</h2>
+            <div className="space-y-3">
+              {photoPreviews.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {photoPreviews.map((src, i) => (
+                    <div key={i} className="relative">
+                      <img src={src} alt="" className="w-24 h-24 object-cover rounded-lg" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPhotoFiles(prev => prev.filter((_, j) => j !== i));
+                          setPhotoPreviews(prev => prev.filter((_, j) => j !== i));
+                        }}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center p-0 border-0"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <label className="inline-flex items-center gap-2 px-4 py-2.5 border border-sage-dark/40 text-earth rounded-xl text-sm font-medium hover:border-forest hover:text-forest transition-colors cursor-pointer">
+                <Camera className="w-4 h-4" />
+                Add Photos
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={e => {
+                    const files = Array.from(e.target.files ?? []);
+                    const valid = files.filter(f => f.size <= 5 * 1024 * 1024);
+                    setPhotoFiles(prev => [...prev, ...valid]);
+                    valid.forEach(f => {
+                      const reader = new FileReader();
+                      reader.onload = ev => {
+                        setPhotoPreviews(prev => [...prev, ev.target?.result as string]);
+                      };
+                      reader.readAsDataURL(f);
+                    });
+                    e.target.value = '';
+                  }}
+                  className="hidden"
+                />
+              </label>
+              <p className="text-xs text-earth-light">Up to 5MB per photo. Photos help visitors find your stand!</p>
             </div>
           </div>
 

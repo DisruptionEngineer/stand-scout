@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   ArrowLeft, Navigation, Phone, Globe, Clock, Heart,
   MapPin, CreditCard, Tag, Printer, ThumbsUp, ThumbsDown,
-  Loader2, Check, Send,
+  Loader2, Check, Send, Camera, ChevronLeft, ChevronRight, X,
 } from 'lucide-react';
 import { categoryIcons } from '../components/CategoryFilter';
 import StarRating from '../components/StarRating';
@@ -12,7 +12,7 @@ import ReviewCard from '../components/ReviewCard';
 import AvailabilityBadge from '../components/AvailabilityBadge';
 import { useFavorites } from '../context/FavoritesContext';
 import { useStand, useReviews } from '../lib/hooks';
-import { submitReport, submitReview } from '../lib/api';
+import { submitReport, submitReview, uploadStandPhoto } from '../lib/api';
 
 export default function StandDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +23,30 @@ export default function StandDetailPage() {
   const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5 });
   const [reviewStatus, setReviewStatus] = useState<'idle' | 'submitting' | 'done'>('idle');
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [lightbox, setLightbox] = useState<number | null>(null);
+
+  // Sync photos from stand data
+  useEffect(() => {
+    if (stand?.photos && stand.photos.length > 0) setPhotos(stand.photos);
+  }, [stand?.photos]);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !stand) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Photo must be under 5MB');
+      return;
+    }
+    setUploading(true);
+    const url = await uploadStandPhoto(stand.id, file);
+    if (url) {
+      setPhotos(prev => [...prev, url]);
+    }
+    setUploading(false);
+    e.target.value = '';
+  };
 
   if (loading) {
     return (
@@ -83,6 +107,58 @@ export default function StandDetailPage() {
           <ArrowLeft className="w-4 h-4" />
           Back to map
         </Link>
+
+        {/* Photo gallery */}
+        {(stand.photos.length > 0 || photos.length > 0) && (
+          <div className="mb-4">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+              {(photos.length > 0 ? photos : stand.photos).map((url, i) => (
+                <button
+                  key={url}
+                  onClick={() => setLightbox(i)}
+                  className="shrink-0 rounded-xl overflow-hidden border border-sage-dark/20 hover:border-forest/40 transition-colors bg-transparent p-0"
+                >
+                  <img
+                    src={url}
+                    alt={`${stand.name} photo ${i + 1}`}
+                    className="w-48 h-32 object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Lightbox */}
+        {lightbox !== null && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
+            <button onClick={() => setLightbox(null)} className="absolute top-4 right-4 text-white p-2 bg-transparent border-0">
+              <X className="w-6 h-6" />
+            </button>
+            {lightbox > 0 && (
+              <button
+                onClick={e => { e.stopPropagation(); setLightbox(lightbox - 1); }}
+                className="absolute left-4 text-white p-2 bg-white/10 rounded-full border-0"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
+            <img
+              src={(photos.length > 0 ? photos : stand.photos)[lightbox]}
+              alt={`${stand.name} photo`}
+              className="max-w-full max-h-[85vh] object-contain rounded-lg"
+              onClick={e => e.stopPropagation()}
+            />
+            {lightbox < (photos.length > 0 ? photos : stand.photos).length - 1 && (
+              <button
+                onClick={e => { e.stopPropagation(); setLightbox(lightbox + 1); }}
+                className="absolute right-4 text-white p-2 bg-white/10 rounded-full border-0"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Main card */}
         <div className="bg-white rounded-2xl shadow-sm border border-sage-dark/20 overflow-hidden">
@@ -237,6 +313,22 @@ export default function StandDetailPage() {
                   Print QR flyer
                 </button>
               </div>
+            </div>
+
+            {/* Photo upload */}
+            <div className="flex items-center gap-3 mb-8">
+              <label className="flex items-center gap-2 px-4 py-2.5 border border-sage-dark/40 text-earth rounded-xl text-sm font-medium hover:border-forest hover:text-forest transition-colors cursor-pointer">
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                {uploading ? 'Uploading...' : 'Add a Photo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  disabled={uploading}
+                  className="hidden"
+                />
+              </label>
+              <span className="text-xs text-earth-light">Share what you see! (max 5MB)</span>
             </div>
 
             {/* Community reporting */}

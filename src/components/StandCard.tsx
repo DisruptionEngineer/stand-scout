@@ -11,10 +11,22 @@ export default function StandCard({ stand }: { stand: Stand }) {
   const faved = isFavorite(stand.id);
   const PrimaryIcon = categoryIcons[stand.categories[0]];
 
+  const heroPhoto = stand.photos?.[0];
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-sage-dark/20 overflow-hidden hover:shadow-md transition-shadow group">
-      {/* Color band top */}
-      <div className="h-1.5 bg-gradient-to-r from-forest to-forest-light" />
+      {/* Hero photo or color band */}
+      {heroPhoto ? (
+        <Link to={`/stand/${stand.id}`}>
+          <img
+            src={heroPhoto}
+            alt={stand.name}
+            className="w-full h-36 object-cover"
+          />
+        </Link>
+      ) : (
+        <div className="h-1.5 bg-gradient-to-r from-forest to-forest-light" />
+      )}
 
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-2">

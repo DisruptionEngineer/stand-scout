@@ -268,6 +268,87 @@ export async function fetchAdminStats(): Promise<AdminStats> {
   };
 }
 
+// ============================================
+// PHOTOS
+// ============================================
+
+const PHOTO_BUCKET = 'stand-photos';
+
+export async function uploadStandPhoto(
+  standId: string,
+  file: File,
+): Promise<string | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+  const path = `${standId}/${Date.now()}.${ext}`;
+
+  const { error: uploadErr } = await supabase.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+
+  if (uploadErr) {
+    console.error('Error uploading photo:', uploadErr);
+    return null;
+  }
+
+  const { data } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path);
+  const publicUrl = data.publicUrl;
+
+  // Append URL to stand's photos array
+  const { data: stand } = await supabase
+    .from('stands')
+    .select('photos')
+    .eq('id', standId)
+    .single();
+
+  const currentPhotos: string[] = (stand?.photos as string[]) ?? [];
+  const { error: updateErr } = await supabase
+    .from('stands')
+    .update({ photos: [...currentPhotos, publicUrl] })
+    .eq('id', standId);
+
+  if (updateErr) {
+    console.error('Error updating stand photos:', updateErr);
+    return null;
+  }
+
+  return publicUrl;
+}
+
+export async function deleteStandPhoto(
+  standId: string,
+  photoUrl: string,
+): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return false;
+
+  // Extract storage path from URL
+  const parts = photoUrl.split(`/${PHOTO_BUCKET}/`);
+  const storagePath = parts[1];
+  if (storagePath) {
+    await supabase.storage.from(PHOTO_BUCKET).remove([storagePath]);
+  }
+
+  // Remove URL from stand's photos array
+  const { data: stand } = await supabase
+    .from('stands')
+    .select('photos')
+    .eq('id', standId)
+    .single();
+
+  const currentPhotos: string[] = (stand?.photos as string[]) ?? [];
+  const { error } = await supabase
+    .from('stands')
+    .update({ photos: currentPhotos.filter(p => p !== photoUrl) })
+    .eq('id', standId);
+
+  if (error) {
+    console.error('Error removing photo from stand:', error);
+    return false;
+  }
+  return true;
+}
+
 export async function submitReview(
   standId: string,
   rating: number,

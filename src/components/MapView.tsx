@@ -1,14 +1,29 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import { Crosshair } from 'lucide-react';
 import type { Map as LeafletMap } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Stand } from '../data/types';
 import StandMarker from './StandMarker';
 
-// Shenandoah Valley center
-const DEFAULT_CENTER: [number, number] = [38.43, -78.87];
+// Mantua, Ohio 44255
+const DEFAULT_CENTER: [number, number] = [41.2834, -81.2232];
 const DEFAULT_ZOOM = 11;
+
+/** Auto-center on user location when map first loads */
+function AutoLocate() {
+  const map = useMap();
+  const [asked, setAsked] = useState(false);
+
+  useEffect(() => {
+    if (asked) return;
+    setAsked(true);
+    map.locate({ setView: true, maxZoom: 12 });
+  }, [map, asked]);
+
+  return null;
+}
 
 function LocateButton() {
   const map = useMap();
@@ -55,9 +70,17 @@ export default function MapView({ stands, className = '' }: MapViewProps) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {stands.map(stand => (
-          <StandMarker key={stand.id} stand={stand} />
-        ))}
+        <MarkerClusterGroup
+          chunkedLoading
+          maxClusterRadius={40}
+          spiderfyOnMaxZoom
+          showCoverageOnHover={false}
+        >
+          {stands.map(stand => (
+            <StandMarker key={stand.id} stand={stand} />
+          ))}
+        </MarkerClusterGroup>
+        <AutoLocate />
         <LocateButton />
       </MapContainer>
     </div>
