@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Clock, CheckCircle2, Star, LogOut, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Clock, CheckCircle2, Star, LogOut, Loader2, Plus } from 'lucide-react';
 import { fetchAdminStats, type AdminStats } from '../../lib/api';
 import { signOut } from '../../lib/auth';
 import { useAuth } from '../../context/AuthContext';
@@ -57,7 +57,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Quick links */}
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-3 gap-4">
               <Link
                 to="/admin/pending"
                 className="bg-white rounded-2xl shadow-sm border border-sage-dark/20 p-6 hover:border-forest/40 transition-colors"
@@ -82,6 +82,18 @@ export default function AdminDashboardPage() {
                 </div>
                 <p className="text-sm text-earth-light">
                   View, edit, or remove all {stats.total} stands
+                </p>
+              </Link>
+              <Link
+                to="/admin/add"
+                className="bg-white rounded-2xl shadow-sm border border-sage-dark/20 p-6 hover:border-forest/40 transition-colors"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <Plus className="w-5 h-5 text-forest" />
+                  <h2 className="text-lg font-semibold text-earth">Add Stand</h2>
+                </div>
+                <p className="text-sm text-earth-light">
+                  Quickly add a new stand (auto-approved)
                 </p>
               </Link>
             </div>

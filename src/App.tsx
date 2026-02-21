@@ -12,6 +12,7 @@ import AdminLoginPage from './pages/admin/LoginPage';
 import AdminDashboardPage from './pages/admin/DashboardPage';
 import AdminPendingPage from './pages/admin/PendingPage';
 import AdminManageStandsPage from './pages/admin/ManageStandsPage';
+import AdminAddStandPage from './pages/admin/AddStandPage';
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
         <Route path="/admin/pending" element={<AdminRoute><AdminPendingPage /></AdminRoute>} />
         <Route path="/admin/stands" element={<AdminRoute><AdminManageStandsPage /></AdminRoute>} />
+        <Route path="/admin/add" element={<AdminRoute><AdminAddStandPage /></AdminRoute>} />
 
         {/* Public routes */}
         <Route path="/*" element={

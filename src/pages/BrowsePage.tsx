@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { MapIcon, SortAsc, Loader2 } from 'lucide-react';
 import { Category } from '../data/types';
@@ -7,14 +7,23 @@ import StandCard from '../components/StandCard';
 import SearchBar from '../components/SearchBar';
 import CategoryFilter from '../components/CategoryFilter';
 
-type SortOption = 'rating' | 'newest' | 'name' | 'reviews';
+type SortOption = 'rating' | 'newest' | 'name' | 'reviews' | 'nearest';
 
 const sortLabels: Record<SortOption, string> = {
   rating: 'Top Rated',
+  nearest: 'Nearest',
   newest: 'Newest',
   name: 'A–Z',
   reviews: 'Most Reviewed',
 };
+
+function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 3959; // miles
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 export default function BrowsePage() {
   const { stands: allStands, loading } = useStands();
@@ -22,6 +31,18 @@ export default function BrowsePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   const [sort, setSort] = useState<SortOption>('rating');
+  const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
+
+  const requestLocation = useCallback(() => {
+    navigator.geolocation?.getCurrentPosition(
+      pos => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { timeout: 5000 },
+    );
+  }, []);
+
+  // Auto-request location on mount
+  useEffect(requestLocation, [requestLocation]);
 
   const filtered = useMemo(() => {
     let stands = [...allStands];
@@ -58,10 +79,18 @@ export default function BrowsePage() {
       case 'reviews':
         stands.sort((a, b) => b.reviewCount - a.reviewCount);
         break;
+      case 'nearest':
+        if (userLoc) {
+          stands.sort((a, b) =>
+            haversine(userLoc.lat, userLoc.lng, a.latitude, a.longitude) -
+            haversine(userLoc.lat, userLoc.lng, b.latitude, b.longitude)
+          );
+        }
+        break;
     }
 
     return stands;
-  }, [search, categories, showAvailableOnly, sort]);
+  }, [search, categories, showAvailableOnly, sort, userLoc]);
 
   return (
     <div className="min-h-screen bg-cream">
