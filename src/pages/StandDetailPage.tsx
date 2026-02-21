@@ -1,21 +1,36 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   ArrowLeft, Navigation, Phone, Globe, Clock, Heart,
   MapPin, CreditCard, Tag, Printer, ThumbsUp, ThumbsDown,
+  Loader2, Check, Send,
 } from 'lucide-react';
-import { mockStands, mockReviews } from '../data/stands';
 import { categoryIcons } from '../components/CategoryFilter';
 import StarRating from '../components/StarRating';
 import ReviewCard from '../components/ReviewCard';
 import AvailabilityBadge from '../components/AvailabilityBadge';
 import { useFavorites } from '../context/FavoritesContext';
+import { useStand, useReviews } from '../lib/hooks';
+import { submitReport, submitReview } from '../lib/api';
 
 export default function StandDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const stand = mockStands.find(s => s.id === id);
-  const reviews = mockReviews.filter(r => r.standId === id);
+  const { stand, loading } = useStand(id);
+  const { reviews, addReview } = useReviews(id);
   const { isFavorite, toggleFavorite } = useFavorites();
+  const [reportStatus, setReportStatus] = useState<'idle' | 'submitting' | 'done'>('idle');
+  const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5 });
+  const [reviewStatus, setReviewStatus] = useState<'idle' | 'submitting' | 'done'>('idle');
+  const [showReviewForm, setShowReviewForm] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-forest animate-spin" />
+      </div>
+    );
+  }
 
   if (!stand) {
     return (
@@ -27,6 +42,34 @@ export default function StandDetailPage() {
       </div>
     );
   }
+
+  const handleReport = async (status: 'stocked' | 'empty') => {
+    setReportStatus('submitting');
+    await submitReport(stand.id, status);
+    setReportStatus('done');
+  };
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewForm.name.trim() || !reviewForm.text.trim()) return;
+    setReviewStatus('submitting');
+    const ok = await submitReview(stand.id, reviewForm.rating, reviewForm.text, reviewForm.name);
+    if (ok) {
+      addReview({
+        id: `local-${Date.now()}`,
+        standId: stand.id,
+        rating: reviewForm.rating,
+        text: reviewForm.text,
+        authorName: reviewForm.name,
+        date: new Date().toISOString().split('T')[0],
+      });
+      setReviewForm({ name: '', text: '', rating: 5 });
+      setReviewStatus('done');
+      setShowReviewForm(false);
+    } else {
+      setReviewStatus('idle');
+    }
+  };
 
   const faved = isFavorite(stand.id);
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${stand.latitude},${stand.longitude}`;
@@ -202,16 +245,31 @@ export default function StandDetailPage() {
               <p className="text-xs text-earth-light mb-3">
                 Help others know if the stand is stocked right now.
               </p>
-              <div className="flex gap-3">
-                <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
-                  <ThumbsUp className="w-4 h-4" />
-                  Yes, it's stocked!
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-earth rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
-                  <ThumbsDown className="w-4 h-4" />
-                  Nothing out
-                </button>
-              </div>
+              {reportStatus === 'done' ? (
+                <div className="flex items-center gap-2 text-green-700 text-sm font-medium">
+                  <Check className="w-4 h-4" />
+                  Thanks for the update!
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleReport('stocked')}
+                    disabled={reportStatus === 'submitting'}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    {reportStatus === 'submitting' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ThumbsUp className="w-4 h-4" />}
+                    Yes, it's stocked!
+                  </button>
+                  <button
+                    onClick={() => handleReport('empty')}
+                    disabled={reportStatus === 'submitting'}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-earth rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    <ThumbsDown className="w-4 h-4" />
+                    Nothing out
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Reviews */}
@@ -225,7 +283,72 @@ export default function StandDetailPage() {
                     <span className="text-sm text-earth-light">({stand.reviewCount})</span>
                   </div>
                 </div>
+                {!showReviewForm && (
+                  <button
+                    onClick={() => setShowReviewForm(true)}
+                    className="text-sm text-forest font-medium hover:underline border-0 bg-transparent p-0"
+                  >
+                    Write a review
+                  </button>
+                )}
               </div>
+
+              {/* Review form */}
+              {showReviewForm && (
+                <form onSubmit={handleReviewSubmit} className="bg-sage/30 rounded-xl p-4 mb-4 space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-earth mb-1">Your name</label>
+                    <input
+                      type="text"
+                      required
+                      value={reviewForm.name}
+                      onChange={e => setReviewForm(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border border-sage-dark/40 text-sm focus:outline-none focus:ring-2 focus:ring-forest/30"
+                      placeholder="e.g., Sarah M."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-earth mb-1">Rating</label>
+                    <StarRating rating={reviewForm.rating} size="md" interactive onChange={r => setReviewForm(prev => ({ ...prev, rating: r }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-earth mb-1">Your review</label>
+                    <textarea
+                      required
+                      value={reviewForm.text}
+                      onChange={e => setReviewForm(prev => ({ ...prev, text: e.target.value }))}
+                      rows={3}
+                      className="w-full px-3 py-2 rounded-lg border border-sage-dark/40 text-sm focus:outline-none focus:ring-2 focus:ring-forest/30 resize-none"
+                      placeholder="What did you think?"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      disabled={reviewStatus === 'submitting'}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-forest text-white rounded-lg text-sm font-medium hover:bg-forest-light transition-colors disabled:opacity-50"
+                    >
+                      {reviewStatus === 'submitting' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      Submit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowReviewForm(false)}
+                      className="px-4 py-2 text-sm text-earth-light hover:text-earth border-0 bg-transparent"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {reviewStatus === 'done' && (
+                <div className="flex items-center gap-2 text-green-700 text-sm font-medium mb-3">
+                  <Check className="w-4 h-4" />
+                  Review submitted — thank you!
+                </div>
+              )}
+
               {reviews.length > 0 ? (
                 <div className="space-y-3">
                   {reviews.map(review => (

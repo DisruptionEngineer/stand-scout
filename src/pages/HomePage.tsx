@@ -1,20 +1,21 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { List, Filter, X } from 'lucide-react';
-import { mockStands } from '../data/stands';
+import { List, Filter, X, Loader2 } from 'lucide-react';
 import { Category } from '../data/types';
+import { useStands } from '../lib/hooks';
 import MapView from '../components/MapView';
 import SearchBar from '../components/SearchBar';
 import CategoryFilter from '../components/CategoryFilter';
 
 export default function HomePage() {
+  const { stands: allStands, loading } = useStands();
   const [search, setSearch] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const filtered = useMemo(() => {
-    let stands = mockStands;
+    let stands = allStands;
 
     if (search) {
       const q = search.toLowerCase();
@@ -109,15 +110,21 @@ export default function HomePage() {
 
       {/* Map */}
       <div className="flex-1 relative">
-        <MapView stands={filtered} className="h-full" />
+        {loading ? (
+          <div className="h-full flex items-center justify-center bg-sage/30">
+            <Loader2 className="w-8 h-8 text-forest animate-spin" />
+          </div>
+        ) : (
+          <MapView stands={filtered} className="h-full" />
+        )}
         {/* Stand count overlay */}
         <div className="absolute top-4 left-4 z-[1000] bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-sm border border-sage-dark/20">
           <span className="text-sm font-medium text-earth">
             {filtered.length} stand{filtered.length !== 1 ? 's' : ''}
           </span>
-          {filtered.length !== mockStands.length && (
+          {filtered.length !== allStands.length && (
             <span className="text-xs text-earth-light ml-1">
-              of {mockStands.length}
+              of {allStands.length}
             </span>
           )}
         </div>

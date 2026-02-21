@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Plus, Check, Download } from 'lucide-react';
+import { Plus, Check, Download, Loader2 } from 'lucide-react';
 import { Category } from '../data/types';
+import { createStand } from '../lib/api';
 
 export default function AddStandPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [newStandId, setNewStandId] = useState<string | null>(null);
   const [standName, setStandName] = useState('');
   const [form, setForm] = useState({
     name: '',
@@ -38,15 +41,36 @@ export default function AddStandPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStandName(form.name);
-    setSubmitted(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setSubmitting(true);
+    const products = form.products.split(',').map(p => p.trim()).filter(Boolean);
+    const result = await createStand({
+      name: form.name,
+      ownerName: form.ownerName,
+      description: form.description,
+      address: form.address,
+      latitude: 38.43 + (Math.random() - 0.5) * 0.2, // placeholder until map pin
+      longitude: -78.87 + (Math.random() - 0.5) * 0.2,
+      phone: form.phone,
+      website: form.website || undefined,
+      categories: form.categories,
+      products,
+      typicalAvailability: form.typicalAvailability,
+      paymentMethods: form.paymentMethods,
+      selfServe: form.selfServe,
+    });
+    setSubmitting(false);
+    if (result) {
+      setNewStandId(result.id);
+      setStandName(form.name);
+      setSubmitted(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   if (submitted) {
-    const qrUrl = `${window.location.origin}/stand/new-${Date.now()}`;
+    const qrUrl = `${window.location.origin}/stand/${newStandId}`;
     return (
       <div className="min-h-screen bg-cream">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12 text-center">
@@ -273,10 +297,11 @@ export default function AddStandPage() {
 
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-forest text-white rounded-xl text-base font-semibold hover:bg-forest-light transition-colors shadow-md"
+            disabled={submitting}
+            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-forest text-white rounded-xl text-base font-semibold hover:bg-forest-light transition-colors shadow-md disabled:opacity-50"
           >
-            <Plus className="w-5 h-5" />
-            Add My Stand — It's Free!
+            {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+            {submitting ? 'Adding your stand...' : "Add My Stand — It's Free!"}
           </button>
 
           <p className="text-center text-xs text-earth-light">

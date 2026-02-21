@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { MapIcon, SortAsc } from 'lucide-react';
-import { mockStands } from '../data/stands';
+import { MapIcon, SortAsc, Loader2 } from 'lucide-react';
 import { Category } from '../data/types';
+import { useStands } from '../lib/hooks';
 import StandCard from '../components/StandCard';
 import SearchBar from '../components/SearchBar';
 import CategoryFilter from '../components/CategoryFilter';
@@ -17,13 +17,14 @@ const sortLabels: Record<SortOption, string> = {
 };
 
 export default function BrowsePage() {
+  const { stands: allStands, loading } = useStands();
   const [search, setSearch] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   const [sort, setSort] = useState<SortOption>('rating');
 
   const filtered = useMemo(() => {
-    let stands = [...mockStands];
+    let stands = [...allStands];
 
     if (search) {
       const q = search.toLowerCase();
@@ -114,7 +115,11 @@ export default function BrowsePage() {
         </div>
 
         {/* Grid */}
-        {filtered.length > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 text-forest animate-spin" />
+          </div>
+        ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map(stand => (
               <StandCard key={stand.id} stand={stand} />
