@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Clock, CheckCircle2, Star, LogOut, Loader2, Plus } from 'lucide-react';
+import { LayoutDashboard, Clock, CheckCircle2, Star, LogOut, Loader2, Plus, Megaphone } from 'lucide-react';
 import { fetchAdminStats, type AdminStats } from '../../lib/api';
 import { signOut } from '../../lib/auth';
 import { useAuth } from '../../context/AuthContext';
@@ -57,7 +57,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Quick links */}
-            <div className="grid sm:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <Link
                 to="/admin/pending"
                 className="bg-white rounded-2xl shadow-sm border border-sage-dark/20 p-6 hover:border-forest/40 transition-colors"
@@ -94,6 +94,18 @@ export default function AdminDashboardPage() {
                 </div>
                 <p className="text-sm text-earth-light">
                   Quickly add a new stand (auto-approved)
+                </p>
+              </Link>
+              <Link
+                to="/admin/sponsors"
+                className="bg-white rounded-2xl shadow-sm border border-sage-dark/20 p-6 hover:border-forest/40 transition-colors"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <Megaphone className="w-5 h-5 text-amber" />
+                  <h2 className="text-lg font-semibold text-earth">Sponsors</h2>
+                </div>
+                <p className="text-sm text-earth-light">
+                  Manage local business sponsors & revenue
                 </p>
               </Link>
             </div>

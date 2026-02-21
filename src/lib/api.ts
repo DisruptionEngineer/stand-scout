@@ -349,6 +349,126 @@ export async function deleteStandPhoto(
   return true;
 }
 
+// ============================================
+// SPONSORS
+// ============================================
+
+export interface Sponsor {
+  id: string;
+  name: string;
+  description: string;
+  url: string | null;
+  logoUrl: string | null;
+  latitude: number;
+  longitude: number;
+  address: string;
+  category: string;
+  monthlyRate: number;
+  active: boolean;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  startDate: string;
+  notes: string | null;
+}
+
+function rowToSponsor(row: Record<string, unknown>): Sponsor {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    description: row.description as string,
+    url: row.url as string | null,
+    logoUrl: row.logo_url as string | null,
+    latitude: row.latitude as number,
+    longitude: row.longitude as number,
+    address: row.address as string,
+    category: row.category as string,
+    monthlyRate: Number(row.monthly_rate),
+    active: row.active as boolean,
+    contactEmail: row.contact_email as string | null,
+    contactPhone: row.contact_phone as string | null,
+    startDate: row.start_date as string,
+    notes: row.notes as string | null,
+  };
+}
+
+export async function fetchSponsorsNear(lat: number, lng: number, radiusMiles = 15): Promise<Sponsor[]> {
+  if (!isSupabaseConfigured || !supabase) return [];
+  // Rough bounding box (1 deg lat ≈ 69 mi)
+  const latDelta = radiusMiles / 69;
+  const lngDelta = radiusMiles / (69 * Math.cos((lat * Math.PI) / 180));
+  const { data, error } = await supabase
+    .from('sponsors')
+    .select('*')
+    .eq('active', true)
+    .gte('latitude', lat - latDelta)
+    .lte('latitude', lat + latDelta)
+    .gte('longitude', lng - lngDelta)
+    .lte('longitude', lng + lngDelta);
+  if (error) { console.error(error); return []; }
+  return (data ?? []).map(rowToSponsor);
+}
+
+export async function fetchAllSponsors(): Promise<Sponsor[]> {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase
+    .from('sponsors')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) { console.error(error); return []; }
+  return (data ?? []).map(rowToSponsor);
+}
+
+export async function createSponsor(input: Record<string, unknown>): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return false;
+  const { error } = await supabase.from('sponsors').insert(input);
+  if (error) { console.error(error); return false; }
+  return true;
+}
+
+export async function updateSponsor(id: string, updates: Record<string, unknown>): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return false;
+  const { error } = await supabase.from('sponsors').update(updates).eq('id', id);
+  if (error) { console.error(error); return false; }
+  return true;
+}
+
+export async function deleteSponsor(id: string): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return false;
+  const { error } = await supabase.from('sponsors').delete().eq('id', id);
+  if (error) { console.error(error); return false; }
+  return true;
+}
+
+// ============================================
+// AD LEADS
+// ============================================
+
+export interface AdLeadInput {
+  business_name: string;
+  contact_name: string;
+  email: string;
+  phone?: string;
+  message?: string;
+  tier: string;
+}
+
+export async function submitAdLead(input: AdLeadInput): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return false;
+  const { error } = await supabase.from('ad_leads').insert(input);
+  if (error) { console.error(error); return false; }
+  return true;
+}
+
+export async function fetchAdLeads(): Promise<Record<string, unknown>[]> {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase
+    .from('ad_leads')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) { console.error(error); return []; }
+  return data ?? [];
+}
+
 export async function submitReview(
   standId: string,
   rating: number,

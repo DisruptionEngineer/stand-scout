@@ -13,6 +13,8 @@ import AdminDashboardPage from './pages/admin/DashboardPage';
 import AdminPendingPage from './pages/admin/PendingPage';
 import AdminManageStandsPage from './pages/admin/ManageStandsPage';
 import AdminAddStandPage from './pages/admin/AddStandPage';
+import AdminSponsorsPage from './pages/admin/SponsorsPage';
+import AdvertisePage from './pages/AdvertisePage';
 
 export default function App() {
   return (
@@ -24,6 +26,7 @@ export default function App() {
         <Route path="/admin/pending" element={<AdminRoute><AdminPendingPage /></AdminRoute>} />
         <Route path="/admin/stands" element={<AdminRoute><AdminManageStandsPage /></AdminRoute>} />
         <Route path="/admin/add" element={<AdminRoute><AdminAddStandPage /></AdminRoute>} />
+        <Route path="/admin/sponsors" element={<AdminRoute><AdminSponsorsPage /></AdminRoute>} />
 
         {/* Public routes */}
         <Route path="/*" element={
@@ -37,6 +40,7 @@ export default function App() {
                 <Route path="/add" element={<AddStandPage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/route" element={<RoutePage />} />
+                <Route path="/advertise" element={<AdvertisePage />} />
               </Routes>
             </main>
             <Footer />

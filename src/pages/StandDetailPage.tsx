@@ -12,7 +12,7 @@ import ReviewCard from '../components/ReviewCard';
 import AvailabilityBadge from '../components/AvailabilityBadge';
 import { useFavorites } from '../context/FavoritesContext';
 import { useStand, useReviews } from '../lib/hooks';
-import { submitReport, submitReview, uploadStandPhoto } from '../lib/api';
+import { submitReport, submitReview, uploadStandPhoto, fetchSponsorsNear, type Sponsor } from '../lib/api';
 
 export default function StandDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,10 +27,19 @@ export default function StandDetailPage() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [lightbox, setLightbox] = useState<number | null>(null);
 
+  const [sponsors, setSponsors] = useState<Sponsor[]>([]);
+
   // Sync photos from stand data
   useEffect(() => {
     if (stand?.photos && stand.photos.length > 0) setPhotos(stand.photos);
   }, [stand?.photos]);
+
+  // Fetch nearby sponsors
+  useEffect(() => {
+    if (stand) {
+      fetchSponsorsNear(stand.latitude, stand.longitude).then(setSponsors);
+    }
+  }, [stand]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -363,6 +372,33 @@ export default function StandDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Nearby Recommendations (Sponsors) */}
+            {sponsors.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-sm font-semibold text-earth uppercase tracking-wider mb-3">Nearby Recommendations</h3>
+                <div className="grid gap-3">
+                  {sponsors.map(sp => (
+                    <a
+                      key={sp.id}
+                      href={sp.url ?? '#'}
+                      target="_blank"
+                      rel="noopener noreferrer sponsored"
+                      className="flex items-center gap-4 p-4 bg-amber/5 border border-amber/20 rounded-xl hover:border-amber/40 transition-colors no-underline"
+                    >
+                      {sp.logoUrl && (
+                        <img src={sp.logoUrl} alt={sp.name} className="w-12 h-12 rounded-lg object-contain bg-white p-1 border border-sage-dark/10" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-earth text-sm">{sp.name}</p>
+                        <p className="text-xs text-earth-light truncate">{sp.description}</p>
+                      </div>
+                      <span className="text-[10px] text-earth-light/60 uppercase tracking-wide shrink-0">Sponsor</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Reviews */}
             <div>

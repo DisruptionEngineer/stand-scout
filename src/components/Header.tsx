@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, Menu, X, Plus, Search, Info, Leaf } from 'lucide-react';
+import { MapPin, Menu, X, Plus, Search, Info, Leaf, Megaphone } from 'lucide-react';
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -11,6 +11,7 @@ export default function Header() {
     { to: '/browse', label: 'Browse', icon: Search },
     { to: '/add', label: 'Add a Stand', icon: Plus },
     { to: '/about', label: 'About', icon: Info },
+    { to: '/advertise', label: 'Advertise', icon: Megaphone },
   ];
 
   const isActive = (path: string) => location.pathname === path;

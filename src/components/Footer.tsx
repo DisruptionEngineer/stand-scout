@@ -28,6 +28,7 @@ export default function Footer() {
               <li><Link to="/browse" className="hover:text-white transition-colors no-underline text-sage/80">Browse Stands</Link></li>
               <li><Link to="/add" className="hover:text-white transition-colors no-underline text-sage/80">Add Your Stand</Link></li>
               <li><Link to="/about" className="hover:text-white transition-colors no-underline text-sage/80">About Stand Scout</Link></li>
+              <li><Link to="/advertise" className="hover:text-white transition-colors no-underline text-sage/80">Advertise With Us</Link></li>
             </ul>
           </div>
 
