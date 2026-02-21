@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --color-forest: #2D5F2D;
+  --color-forest-light: #3A7A3A;
+  --color-forest-dark: #1E4A1E;
+  --color-amber: #D4930D;
+  --color-amber-light: #E5A820;
+  --color-amber-dark: #B07A0A;
+  --color-cream: #FFF8E7;
+  --color-cream-dark: #F5EDD6;
+  --color-earth: #5C4033;
+  --color-earth-light: #7A5A4A;
+  --color-sage: #E8F0E2;
+  --color-sage-dark: #D0E0C8;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Leaflet map styles */
+.leaflet-container {
+  font-family: var(--font-sans);
+  z-index: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-cream);
+  color: var(--color-earth);
+}
+
+/* Availability status pulse */
+@keyframes pulse-green {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.status-pulse {
+  animation: pulse-green 2s ease-in-out infinite;
+}
+
+/* Custom map marker */
+.custom-marker {
+  background: none !important;
+  border: none !important;
+}
