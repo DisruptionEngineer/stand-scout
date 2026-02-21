@@ -32,6 +32,7 @@ export type Database = {
           review_count: number;
           payment_methods: string[];
           self_serve: boolean;
+          status: 'pending' | 'approved' | 'rejected';
           created_at: string;
         };
         Insert: {
@@ -60,6 +61,7 @@ export type Database = {
           review_count?: number;
           payment_methods?: string[];
           self_serve?: boolean;
+          status?: 'pending' | 'approved' | 'rejected';
         };
         Update: Partial<Database['public']['Tables']['stands']['Insert']>;
       };

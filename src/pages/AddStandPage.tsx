@@ -78,9 +78,9 @@ export default function AddStandPage() {
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Check className="w-8 h-8 text-green-600" />
             </div>
-            <h1 className="text-2xl font-bold text-earth mb-2">Your stand is listed!</h1>
+            <h1 className="text-2xl font-bold text-earth mb-2">Your stand has been submitted!</h1>
             <p className="text-earth-light mb-6">
-              <strong>{standName}</strong> is now on Stand Scout. Welcome to the community!
+              <strong>{standName}</strong> is now under review. We'll have it live on Stand Scout shortly!
             </p>
 
             <div className="bg-sage/30 rounded-xl p-6 mb-6">
@@ -305,7 +305,7 @@ export default function AddStandPage() {
           </button>
 
           <p className="text-center text-xs text-earth-light">
-            No account required. Your stand will be visible immediately.
+            No account required. Your stand will be reviewed and go live within 24 hours.
           </p>
         </form>
       </div>

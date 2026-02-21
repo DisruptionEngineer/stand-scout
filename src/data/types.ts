@@ -15,6 +15,7 @@ export const Category = {
 
 export type Category = (typeof Category)[keyof typeof Category];
 
+export type StandModerationStatus = 'pending' | 'approved' | 'rejected';
 export type AvailabilityStatus = 'available' | 'sold_out' | 'unknown';
 export type StatusSource = 'owner_sms' | 'community_qr' | 'community_app' | null;
 export type ReportSource = 'qr_scan' | 'app_report';
@@ -46,6 +47,7 @@ export interface Stand {
   reviewCount: number;
   paymentMethods: string[];
   selfServe: boolean;
+  status?: StandModerationStatus;
 }
 
 export interface AvailabilityReport {

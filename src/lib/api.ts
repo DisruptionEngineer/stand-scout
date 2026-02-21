@@ -33,6 +33,7 @@ function rowToStand(row: Record<string, unknown>): Stand {
     reviewCount: row.review_count as number,
     paymentMethods: row.payment_methods as string[],
     selfServe: row.self_serve as boolean,
+    status: (row.status as Stand['status']) ?? 'approved',
   };
 }
 
@@ -58,6 +59,7 @@ export async function fetchStands(): Promise<Stand[]> {
   const { data, error } = await supabase
     .from('stands')
     .select('*')
+    .eq('status', 'approved')
     .order('rating', { ascending: false });
 
   if (error) {
@@ -177,6 +179,93 @@ export async function submitReport(
     return false;
   }
   return true;
+}
+
+// ============================================
+// ADMIN
+// ============================================
+
+export type StandStatus = 'pending' | 'approved' | 'rejected';
+
+export async function fetchAllStands(statusFilter?: StandStatus): Promise<Stand[]> {
+  if (!isSupabaseConfigured || !supabase) return mockStands;
+  let query = supabase.from('stands').select('*').order('created_at', { ascending: false });
+  if (statusFilter) {
+    query = query.eq('status', statusFilter);
+  }
+  const { data, error } = await query;
+  if (error) {
+    console.error('Error fetching all stands:', error);
+    return [];
+  }
+  return (data ?? []).map(rowToStand);
+}
+
+export async function fetchPendingStands(): Promise<Stand[]> {
+  return fetchAllStands('pending');
+}
+
+export async function updateStandStatus(id: string, status: StandStatus): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return false;
+  const { error } = await supabase.from('stands').update({ status }).eq('id', id);
+  if (error) {
+    console.error('Error updating stand status:', error);
+    return false;
+  }
+  return true;
+}
+
+export async function updateStand(
+  id: string,
+  updates: Record<string, unknown>,
+): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return false;
+  const { error } = await supabase.from('stands').update(updates).eq('id', id);
+  if (error) {
+    console.error('Error updating stand:', error);
+    return false;
+  }
+  return true;
+}
+
+export async function deleteStand(id: string): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return false;
+  const { error } = await supabase.from('stands').delete().eq('id', id);
+  if (error) {
+    console.error('Error deleting stand:', error);
+    return false;
+  }
+  return true;
+}
+
+export interface AdminStats {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  totalReviews: number;
+}
+
+export async function fetchAdminStats(): Promise<AdminStats> {
+  const defaults: AdminStats = { total: 0, pending: 0, approved: 0, rejected: 0, totalReviews: 0 };
+  if (!isSupabaseConfigured || !supabase) return defaults;
+
+  const { data: stands, error: sErr } = await supabase.from('stands').select('status');
+  if (sErr) { console.error(sErr); return defaults; }
+
+  const { count, error: rErr } = await supabase
+    .from('reviews')
+    .select('*', { count: 'exact', head: true });
+  if (rErr) console.error(rErr);
+
+  const rows = stands ?? [];
+  return {
+    total: rows.length,
+    pending: rows.filter(r => r.status === 'pending').length,
+    approved: rows.filter(r => r.status === 'approved').length,
+    rejected: rows.filter(r => r.status === 'rejected').length,
+    totalReviews: count ?? 0,
+  };
 }
 
 export async function submitReview(
