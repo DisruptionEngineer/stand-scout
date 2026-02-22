@@ -3,12 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Loader2, Camera, X } from 'lucide-react';
 import { Category } from '../../data/types';
 import { createStand, updateStandStatus, uploadStandPhoto } from '../../lib/api';
+import LocationPicker from '../../components/LocationPicker';
 
 export default function AdminAddStandPage() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [form, setForm] = useState({
     name: '',
     ownerName: '',
@@ -16,8 +19,6 @@ export default function AdminAddStandPage() {
     phone: '',
     website: '',
     description: '',
-    latitude: '',
-    longitude: '',
     typicalAvailability: '',
     selfServe: false,
     seasonal: false,
@@ -50,8 +51,8 @@ export default function AdminAddStandPage() {
     setSubmitting(true);
 
     const products = form.products.split(',').map(p => p.trim()).filter(Boolean);
-    const lat = parseFloat(form.latitude) || 41.2834;
-    const lng = parseFloat(form.longitude) || -81.2232;
+    const lat = latitude ?? 41.2834;
+    const lng = longitude ?? -81.2232;
 
     const result = await createStand({
       name: form.name,
@@ -119,17 +120,12 @@ export default function AdminAddStandPage() {
               <label className="block text-sm font-medium text-earth mb-1">Address *</label>
               <input type="text" required value={form.address} onChange={e => setForm(prev => ({ ...prev, address: e.target.value }))} placeholder="Street address" className={inputClass} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-earth mb-1">Latitude *</label>
-                <input type="text" required value={form.latitude} onChange={e => setForm(prev => ({ ...prev, latitude: e.target.value }))} placeholder="41.2834" className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-earth mb-1">Longitude *</label>
-                <input type="text" required value={form.longitude} onChange={e => setForm(prev => ({ ...prev, longitude: e.target.value }))} placeholder="-81.2232" className={inputClass} />
-              </div>
-            </div>
-            <p className="text-xs text-earth-light">Tip: right-click a location in Google Maps → "What's here?" to get coordinates.</p>
+            <LocationPicker
+              latitude={latitude}
+              longitude={longitude}
+              onChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+              address={form.address}
+            />
           </Section>
 
           {/* Categories + Products */}

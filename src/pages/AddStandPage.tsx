@@ -3,6 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Plus, Check, Download, Loader2, Camera, X } from 'lucide-react';
 import { Category } from '../data/types';
 import { createStand, uploadStandPhoto } from '../lib/api';
+import LocationPicker from '../components/LocationPicker';
 
 export default function AddStandPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -11,6 +12,8 @@ export default function AddStandPage() {
   const [standName, setStandName] = useState('');
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [form, setForm] = useState({
     name: '',
     ownerName: '',
@@ -52,8 +55,8 @@ export default function AddStandPage() {
       ownerName: form.ownerName,
       description: form.description,
       address: form.address,
-      latitude: 41.2834 + (Math.random() - 0.5) * 0.05, // Mantua OH area, placeholder until map pin
-      longitude: -81.2232 + (Math.random() - 0.5) * 0.05,
+      latitude: latitude ?? 41.2834,
+      longitude: longitude ?? -81.2232,
       phone: form.phone,
       website: form.website || undefined,
       categories: form.categories,
@@ -188,9 +191,12 @@ export default function AddStandPage() {
                   className="w-full px-3 py-2.5 rounded-xl border border-sage-dark/40 text-sm focus:outline-none focus:ring-2 focus:ring-forest/30 focus:border-forest"
                 />
               </div>
-              <div className="bg-sage/30 rounded-xl p-4 text-xs text-earth-light">
-                📍 In a future update, you'll be able to drop a pin on the map for exact location.
-              </div>
+              <LocationPicker
+                latitude={latitude}
+                longitude={longitude}
+                onChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+                address={form.address}
+              />
             </div>
           </div>
 
