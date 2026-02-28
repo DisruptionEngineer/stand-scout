@@ -18,6 +18,7 @@ function AutoLocate() {
 
   useEffect(() => {
     if (asked) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time geolocation trigger
     setAsked(true);
     map.locate({ setView: true, maxZoom: 12 });
   }, [map, asked]);

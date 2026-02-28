@@ -1,7 +1,8 @@
+import { useState, useEffect } from 'react';
 import type { Stand } from '../data/types';
 
-function getTimeSince(isoDate: string): string {
-  const ms = Date.now() - new Date(isoDate).getTime();
+function getTimeSince(isoDate: string, now: number): string {
+  const ms = now - new Date(isoDate).getTime();
   const mins = Math.floor(ms / 60000);
   if (mins < 1) return 'just now';
   if (mins < 60) return `${mins}m ago`;
@@ -23,13 +24,19 @@ function getSourceLabel(source: Stand['lastStatusSource']): string {
 export default function AvailabilityBadge({ stand, size = 'sm' }: { stand: Stand; size?: 'sm' | 'md' }) {
   const { availabilityStatus, lastStatusUpdate, lastStatusSource } = stand;
 
-  const timeSince = lastStatusUpdate ? getTimeSince(lastStatusUpdate) : null;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- capture timestamp when status updates
+    setNow(Date.now());
+  }, [lastStatusUpdate]);
+
+  const timeSince = lastStatusUpdate ? getTimeSince(lastStatusUpdate, now) : null;
   const source = getSourceLabel(lastStatusSource);
 
   // Determine freshness: green < 1h, yellow < 6h, gray otherwise
   let freshness: 'fresh' | 'stale' | 'unknown' = 'unknown';
   if (lastStatusUpdate) {
-    const hoursAgo = (Date.now() - new Date(lastStatusUpdate).getTime()) / 3600000;
+    const hoursAgo = (now - new Date(lastStatusUpdate).getTime()) / 3600000;
     freshness = hoursAgo < 1 ? 'fresh' : hoursAgo < 6 ? 'stale' : 'unknown';
   }
 

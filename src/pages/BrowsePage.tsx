@@ -90,7 +90,7 @@ export default function BrowsePage() {
     }
 
     return stands;
-  }, [search, categories, showAvailableOnly, sort, userLoc]);
+  }, [search, categories, showAvailableOnly, sort, userLoc, allStands]);
 
   return (
     <div className="min-h-screen bg-cream">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import {
@@ -19,7 +19,7 @@ export default function StandDetailPage() {
   const { stand, loading } = useStand(id);
   const { reviews, addReview } = useReviews(id);
   const { isFavorite, toggleFavorite } = useFavorites();
-  const [reportStatus, setReportStatus] = useState<'idle' | 'submitting' | 'done'>('idle');
+  const [reportStatus, setReportStatus] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle');
   const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5 });
   const [reviewStatus, setReviewStatus] = useState<'idle' | 'submitting' | 'done'>('idle');
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -29,8 +29,21 @@ export default function StandDetailPage() {
 
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
 
+  const currentPhotos = photos.length > 0 ? photos : (stand?.photos ?? []);
+
+  const handleLightboxKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setLightbox(null);
+    } else if (e.key === 'ArrowLeft') {
+      setLightbox(prev => (prev !== null && prev > 0 ? prev - 1 : prev));
+    } else if (e.key === 'ArrowRight') {
+      setLightbox(prev => (prev !== null && prev < currentPhotos.length - 1 ? prev + 1 : prev));
+    }
+  }, [currentPhotos.length]);
+
   // Sync photos from stand data
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing derived state from prop
     if (stand?.photos && stand.photos.length > 0) setPhotos(stand.photos);
   }, [stand?.photos]);
 
@@ -78,8 +91,8 @@ export default function StandDetailPage() {
 
   const handleReport = async (status: 'stocked' | 'empty') => {
     setReportStatus('submitting');
-    await submitReport(stand.id, status);
-    setReportStatus('done');
+    const ok = await submitReport(stand.id, status);
+    setReportStatus(ok ? 'done' : 'error');
   };
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
@@ -121,7 +134,7 @@ export default function StandDetailPage() {
         {(stand.photos.length > 0 || photos.length > 0) && (
           <div className="mb-4">
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-              {(photos.length > 0 ? photos : stand.photos).map((url, i) => (
+              {currentPhotos.map((url, i) => (
                 <button
                   key={url}
                   onClick={() => setLightbox(i)}
@@ -140,27 +153,38 @@ export default function StandDetailPage() {
 
         {/* Lightbox */}
         {lightbox !== null && (
-          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
-            <button onClick={() => setLightbox(null)} className="absolute top-4 right-4 text-white p-2 bg-transparent border-0">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Photo gallery"
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+            onClick={() => setLightbox(null)}
+            onKeyDown={handleLightboxKeyDown}
+            tabIndex={-1}
+            ref={el => el?.focus()}
+          >
+            <button onClick={() => setLightbox(null)} aria-label="Close photo gallery" className="absolute top-4 right-4 text-white p-2 bg-transparent border-0">
               <X className="w-6 h-6" />
             </button>
             {lightbox > 0 && (
               <button
                 onClick={e => { e.stopPropagation(); setLightbox(lightbox - 1); }}
+                aria-label="Previous photo"
                 className="absolute left-4 text-white p-2 bg-white/10 rounded-full border-0"
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
             )}
             <img
-              src={(photos.length > 0 ? photos : stand.photos)[lightbox]}
+              src={currentPhotos[lightbox]}
               alt={`${stand.name} photo`}
               className="max-w-full max-h-[85vh] object-contain rounded-lg"
               onClick={e => e.stopPropagation()}
             />
-            {lightbox < (photos.length > 0 ? photos : stand.photos).length - 1 && (
+            {lightbox < currentPhotos.length - 1 && (
               <button
                 onClick={e => { e.stopPropagation(); setLightbox(lightbox + 1); }}
+                aria-label="Next photo"
                 className="absolute right-4 text-white p-2 bg-white/10 rounded-full border-0"
               >
                 <ChevronRight className="w-6 h-6" />
@@ -350,6 +374,10 @@ export default function StandDetailPage() {
                 <div className="flex items-center gap-2 text-green-700 text-sm font-medium">
                   <Check className="w-4 h-4" />
                   Thanks for the update!
+                </div>
+              ) : reportStatus === 'error' ? (
+                <div className="flex items-center gap-2 text-red-600 text-sm font-medium">
+                  Something went wrong. Please try again later.
                 </div>
               ) : (
                 <div className="flex gap-3">

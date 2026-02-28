@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Category } from '../data/types';
 import {
   Apple, Egg, Droplets, CakeSlice, Milk, Drumstick,

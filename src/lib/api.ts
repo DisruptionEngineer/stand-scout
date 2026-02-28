@@ -1,7 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { mockStands, mockReviews } from '../data/stands';
 import type { Stand, Review, Category } from '../data/types';
-import type { StandInsert, ReviewInsert, ReportInsert } from './database.types';
+import type { StandInsert, StandUpdate, ReviewInsert, ReportInsert, SponsorInsert, SponsorUpdate, AdLeadInsert } from './database.types';
 
 // ============================================
 // Row → App type mappers
@@ -217,7 +217,7 @@ export async function updateStandStatus(id: string, status: StandStatus): Promis
 
 export async function updateStand(
   id: string,
-  updates: Record<string, unknown>,
+  updates: StandUpdate,
 ): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) return false;
   const { error } = await supabase.from('stands').update(updates).eq('id', id);
@@ -302,7 +302,7 @@ export async function uploadStandPhoto(
     .eq('id', standId)
     .single();
 
-  const currentPhotos: string[] = (stand?.photos as string[]) ?? [];
+  const currentPhotos: string[] = stand?.photos ?? [];
   const { error: updateErr } = await supabase
     .from('stands')
     .update({ photos: [...currentPhotos, publicUrl] })
@@ -336,7 +336,7 @@ export async function deleteStandPhoto(
     .eq('id', standId)
     .single();
 
-  const currentPhotos: string[] = (stand?.photos as string[]) ?? [];
+  const currentPhotos: string[] = stand?.photos ?? [];
   const { error } = await supabase
     .from('stands')
     .update({ photos: currentPhotos.filter(p => p !== photoUrl) })
@@ -393,7 +393,7 @@ function rowToSponsor(row: Record<string, unknown>): Sponsor {
 
 export async function fetchSponsorsNear(lat: number, lng: number, radiusMiles = 15): Promise<Sponsor[]> {
   if (!isSupabaseConfigured || !supabase) return [];
-  // Rough bounding box (1 deg lat ≈ 69 mi)
+  // Rough bounding box (1 deg lat ~ 69 mi)
   const latDelta = radiusMiles / 69;
   const lngDelta = radiusMiles / (69 * Math.cos((lat * Math.PI) / 180));
   const { data, error } = await supabase
@@ -418,14 +418,14 @@ export async function fetchAllSponsors(): Promise<Sponsor[]> {
   return (data ?? []).map(rowToSponsor);
 }
 
-export async function createSponsor(input: Record<string, unknown>): Promise<boolean> {
+export async function createSponsor(input: SponsorInsert): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) return false;
   const { error } = await supabase.from('sponsors').insert(input);
   if (error) { console.error(error); return false; }
   return true;
 }
 
-export async function updateSponsor(id: string, updates: Record<string, unknown>): Promise<boolean> {
+export async function updateSponsor(id: string, updates: SponsorUpdate): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) return false;
   const { error } = await supabase.from('sponsors').update(updates).eq('id', id);
   if (error) { console.error(error); return false; }
@@ -454,7 +454,15 @@ export interface AdLeadInput {
 
 export async function submitAdLead(input: AdLeadInput): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) return false;
-  const { error } = await supabase.from('ad_leads').insert(input);
+  const row: AdLeadInsert = {
+    business_name: input.business_name,
+    contact_name: input.contact_name,
+    email: input.email,
+    phone: input.phone ?? null,
+    message: input.message ?? null,
+    tier: input.tier,
+  };
+  const { error } = await supabase.from('ad_leads').insert(row);
   if (error) { console.error(error); return false; }
   return true;
 }

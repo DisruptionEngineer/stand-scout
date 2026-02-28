@@ -24,6 +24,7 @@ export default function AdminSponsorsPage() {
     setLoading(true);
     fetchAllSponsors().then(setSponsors).finally(() => setLoading(false));
   };
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch pattern
   useEffect(load, []);
 
   const handleCreate = async (e: React.FormEvent) => {

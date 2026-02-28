@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { List, Filter, X, Loader2 } from 'lucide-react';
 import { Category } from '../data/types';
 import { useStands } from '../lib/hooks';
+import ErrorBoundary from '../components/ErrorBoundary';
 import MapView from '../components/MapView';
 import SearchBar from '../components/SearchBar';
 import CategoryFilter from '../components/CategoryFilter';
@@ -37,7 +38,7 @@ export default function HomePage() {
     }
 
     return stands;
-  }, [search, categories, showAvailableOnly]);
+  }, [search, categories, showAvailableOnly, allStands]);
 
   const activeFilterCount = categories.length + (showAvailableOnly ? 1 : 0);
 
@@ -115,7 +116,9 @@ export default function HomePage() {
             <Loader2 className="w-8 h-8 text-forest animate-spin" />
           </div>
         ) : (
-          <MapView stands={filtered} className="h-full" />
+          <ErrorBoundary fallback={<div className="h-full flex items-center justify-center bg-sage/30"><p className="text-earth-light">Map failed to load. Please refresh.</p></div>}>
+            <MapView stands={filtered} className="h-full" />
+          </ErrorBoundary>
         )}
         {/* Stand count overlay */}
         <div className="absolute top-4 left-4 z-[1000] bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-sm border border-sage-dark/20">

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { getSession, onAuthStateChange } from '../lib/auth';
@@ -15,6 +16,11 @@ const AuthContext = createContext<AuthState>({
   loading: true,
   isAdmin: false,
 });
+
+const ADMIN_EMAILS: string[] = (import.meta.env.VITE_ADMIN_EMAILS ?? '')
+  .split(',')
+  .map((e: string) => e.trim().toLowerCase())
+  .filter(Boolean);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -39,8 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const user = session?.user ?? null;
-  // Any authenticated Supabase user is treated as admin
-  const isAdmin = !!user;
+  const isAdmin = !!user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
 
   return (
     <AuthContext.Provider value={{ session, user, loading, isAdmin }}>

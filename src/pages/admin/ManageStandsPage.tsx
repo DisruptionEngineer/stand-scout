@@ -29,6 +29,7 @@ export default function AdminManageStandsPage() {
       .finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch pattern
   useEffect(load, [filter]);
 
   const handleStatusChange = async (id: string, status: StandStatus) => {

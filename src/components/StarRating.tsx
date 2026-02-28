@@ -12,7 +12,11 @@ const sizes = { sm: 'w-3.5 h-3.5', md: 'w-4.5 h-4.5', lg: 'w-5.5 h-5.5' };
 
 export default function StarRating({ rating, max = 5, size = 'md', interactive = false, onChange }: StarRatingProps) {
   return (
-    <div className="flex items-center gap-0.5">
+    <div
+      className="flex items-center gap-0.5"
+      role={interactive ? 'radiogroup' : undefined}
+      aria-label={interactive ? 'Star rating' : `Rated ${rating} out of ${max} stars`}
+    >
       {Array.from({ length: max }, (_, i) => {
         const filled = i < Math.floor(rating);
         const half = !filled && i < rating;
@@ -22,6 +26,7 @@ export default function StarRating({ rating, max = 5, size = 'md', interactive =
             type="button"
             disabled={!interactive}
             onClick={() => onChange?.(i + 1)}
+            aria-label={interactive ? `Rate ${i + 1} out of ${max} stars` : undefined}
             className={`${interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'} transition-transform disabled:opacity-100 p-0 border-0 bg-transparent`}
           >
             <Star

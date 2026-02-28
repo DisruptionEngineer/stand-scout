@@ -16,6 +16,7 @@ export default function AdminPendingPage() {
       .finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch pattern
   useEffect(load, []);
 
   const handleAction = async (id: string, status: 'approved' | 'rejected') => {

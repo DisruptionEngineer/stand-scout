@@ -9,6 +9,7 @@ export function useStands() {
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loading state must be set before async fetch
     setLoading(true);
     fetchStands()
       .then(data => {
@@ -37,6 +38,7 @@ export function useStand(id: string | undefined) {
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loading state must be set before async fetch
     setLoading(true);
     fetchStand(id)
       .then(data => {
@@ -64,6 +66,7 @@ export function useReviews(standId: string | undefined) {
   useEffect(() => {
     if (!standId) return;
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loading state must be set before async fetch
     setLoading(true);
     fetchReviews(standId)
       .then(data => {
