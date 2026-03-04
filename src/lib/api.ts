@@ -34,6 +34,7 @@ function rowToStand(row: Record<string, unknown>): Stand {
     paymentMethods: row.payment_methods as string[],
     selfServe: row.self_serve as boolean,
     status: (row.status as Stand['status']) ?? 'approved',
+    userId: (row.user_id as string) || undefined,
   };
 }
 
@@ -44,6 +45,7 @@ function rowToReview(row: Record<string, unknown>): Review {
     rating: row.rating as number,
     text: row.text as string,
     authorName: row.author_name as string,
+    userId: (row.user_id as string) || undefined,
     date: row.date as string,
   };
 }
@@ -122,6 +124,7 @@ export interface NewStandInput {
   typicalAvailability: string;
   paymentMethods: string[];
   selfServe: boolean;
+  userId?: string;
 }
 
 export async function createStand(input: NewStandInput): Promise<{ id: string } | null> {
@@ -144,6 +147,7 @@ export async function createStand(input: NewStandInput): Promise<{ id: string } 
     typical_availability: input.typicalAvailability,
     payment_methods: input.paymentMethods,
     self_serve: input.selfServe,
+    user_id: input.userId || null,
   };
   const { data, error } = await supabase
     .from('stands')
@@ -485,6 +489,7 @@ export async function submitReview(
   rating: number,
   text: string,
   authorName: string,
+  userId?: string,
 ): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) {
     return true; // mock success
@@ -494,6 +499,7 @@ export async function submitReview(
     rating,
     text,
     author_name: authorName,
+    user_id: userId || null,
   };
   const { error } = await supabase
     .from('reviews')
@@ -574,4 +580,46 @@ export async function fetchRecentProductReports(
     availableCount: counts.available,
     unavailableCount: counts.unavailable,
   }));
+}
+
+// ============================================
+// USER-SPECIFIC
+// ============================================
+
+export async function fetchUserStands(userId: string): Promise<Stand[]> {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase
+    .from('stands')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Error fetching user stands:', error);
+    return [];
+  }
+  return (data ?? []).map(rowToStand);
+}
+
+export interface OwnerStandUpdate {
+  description?: string;
+  phone?: string;
+  website?: string | null;
+  typical_availability?: string;
+  payment_methods?: string[];
+  self_serve?: boolean;
+  products?: string[];
+  photos?: string[];
+}
+
+export async function updateStandOwnerFields(
+  id: string,
+  updates: OwnerStandUpdate,
+): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return false;
+  const { error } = await supabase.from('stands').update(updates).eq('id', id);
+  if (error) {
+    console.error('Error updating stand owner fields:', error);
+    return false;
+  }
+  return true;
 }

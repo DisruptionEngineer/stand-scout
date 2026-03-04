@@ -5,13 +5,14 @@ import {
   ArrowLeft, Navigation, Phone, Globe, Clock, Heart,
   MapPin, CreditCard, Tag, Printer,
   Loader2, Check, Send, Camera, ChevronLeft, ChevronRight, X,
-  Star,
+  Star, Edit3,
 } from 'lucide-react';
 import { categoryIcons } from '../components/CategoryFilter';
 import StarRating from '../components/StarRating';
 import ReviewCard from '../components/ReviewCard';
 import AvailabilityBadge from '../components/AvailabilityBadge';
 import { useFavorites } from '../context/FavoritesContext';
+import { useAuth } from '../context/AuthContext';
 import { useStand, useReviews } from '../lib/hooks';
 import { submitReview, uploadStandPhoto, fetchSponsorsNear, type Sponsor } from '../lib/api';
 import { sanitizeUrl } from '../lib/sanitize';
@@ -22,6 +23,8 @@ export default function StandDetailPage() {
   const { stand, loading } = useStand(id);
   const { reviews, addReview } = useReviews(id);
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { user, isAdmin } = useAuth();
+  const isOwner = !!user && !!stand?.userId && stand.userId === user.id;
   const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5 });
   const [reviewStatus, setReviewStatus] = useState<'idle' | 'submitting' | 'done'>('idle');
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -81,7 +84,7 @@ export default function StandDetailPage() {
     e.preventDefault();
     if (!reviewForm.name.trim() || !reviewForm.text.trim()) return;
     setReviewStatus('submitting');
-    const ok = await submitReview(stand.id, reviewForm.rating, reviewForm.text, reviewForm.name);
+    const ok = await submitReview(stand.id, reviewForm.rating, reviewForm.text, reviewForm.name, user?.id);
     if (ok) {
       addReview({
         id: `local-${Date.now()}`,
@@ -191,6 +194,12 @@ export default function StandDetailPage() {
                 <Globe className="w-4 h-4" />
                 Website
               </a>
+            )}
+            {(isOwner || isAdmin) && (
+              <Link to={`/stand/${stand.id}/edit`} className="flex items-center gap-2 px-4 py-2.5 border border-amber text-amber-dark rounded-lg text-sm font-medium hover:bg-amber/10 transition-colors no-underline bg-white">
+                <Edit3 className="w-4 h-4" />
+                Edit Stand
+              </Link>
             )}
           </div>
         </div>

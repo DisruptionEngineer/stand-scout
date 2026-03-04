@@ -5,9 +5,11 @@ import { Category } from '../data/types';
 import { createStand, uploadStandPhoto } from '../lib/api';
 import { generateStandName } from '../lib/geocoding';
 import { sanitizeText, sanitizeUrl } from '../lib/sanitize';
+import { useAuth } from '../context/AuthContext';
 import LocationPicker from '../components/LocationPicker';
 
 export default function AddStandPage() {
+  const { user } = useAuth();
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [newStandId, setNewStandId] = useState<string | null>(null);
@@ -94,6 +96,7 @@ export default function AddStandPage() {
       typicalAvailability: sanitizeText(form.typicalAvailability, 120),
       paymentMethods: form.paymentMethods,
       selfServe: form.selfServe,
+      userId: user?.id,
     });
     setSubmitting(false);
     if (result) {

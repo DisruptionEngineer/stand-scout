@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, Menu, X, Plus, Search, Info, Leaf, Megaphone } from 'lucide-react';
+import { MapPin, Menu, X, Plus, Search, Info, Leaf, Megaphone, User, LogIn } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const location = useLocation();
+  const { user, loading } = useAuth();
 
   const links = [
     { to: '/', label: 'Discover', icon: MapPin },
@@ -70,6 +72,37 @@ export default function Header() {
                   {label}
                 </Link>
               ))}
+
+              {/* Auth link */}
+              {!loading && (
+                <span className="ml-1 border-l border-forest/50 pl-2">
+                  {user ? (
+                    <Link
+                      to="/account"
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 no-underline ${
+                        isActive('/account')
+                          ? 'text-amber-light'
+                          : 'text-sage/70 hover:text-white'
+                      }`}
+                    >
+                      <User className="w-3.5 h-3.5" />
+                      Account
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/login"
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 no-underline ${
+                        isActive('/login')
+                          ? 'text-amber-light'
+                          : 'text-sage/70 hover:text-white'
+                      }`}
+                    >
+                      <LogIn className="w-3.5 h-3.5" />
+                      Sign In
+                    </Link>
+                  )}
+                </span>
+              )}
             </nav>
 
             {/* Mobile menu button */}
@@ -103,6 +136,39 @@ export default function Header() {
                   {label}
                 </Link>
               ))}
+
+              {/* Auth link (mobile) */}
+              {!loading && (
+                <div className="border-t border-forest/50 pt-1 mt-1">
+                  {user ? (
+                    <Link
+                      to="/account"
+                      onClick={() => setMobileOpen(false)}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors no-underline ${
+                        isActive('/account')
+                          ? 'bg-forest text-amber-light'
+                          : 'text-sage/80 hover:bg-forest/60 hover:text-white'
+                      }`}
+                    >
+                      <User className="w-4 h-4" />
+                      Account
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/login"
+                      onClick={() => setMobileOpen(false)}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors no-underline ${
+                        isActive('/login')
+                          ? 'bg-forest text-amber-light'
+                          : 'text-sage/80 hover:bg-forest/60 hover:text-white'
+                      }`}
+                    >
+                      <LogIn className="w-4 h-4" />
+                      Sign In
+                    </Link>
+                  )}
+                </div>
+              )}
             </div>
           </nav>
         )}

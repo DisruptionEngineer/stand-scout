@@ -1,5 +1,6 @@
 -- Stand Scout: Full Database Setup (schema + all migrations combined)
 -- Run this in the Supabase SQL Editor to set up from scratch
+-- Includes: migration-006 (user auth, is_admin(), owner edit restrictions)
 
 -- ============================================
 -- Enable UUID extension
@@ -7,7 +8,27 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================
--- STANDS TABLE (schema.sql + migration-002 status + migration-005 address_geocoded)
+-- ADMIN EMAILS TABLE (migration-006)
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.admin_emails (
+  email text PRIMARY KEY
+);
+
+INSERT INTO public.admin_emails (email)
+VALUES ('admin@standscout.com')
+ON CONFLICT DO NOTHING;
+
+-- Server-side admin check function
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.admin_emails
+    WHERE email = lower(auth.jwt() ->> 'email')
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- ============================================
+-- STANDS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.stands (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -37,6 +58,7 @@ CREATE TABLE IF NOT EXISTS public.stands (
   payment_methods text[] NOT NULL DEFAULT '{}',
   self_serve boolean NOT NULL DEFAULT false,
   status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  user_id uuid REFERENCES auth.users(id),
   created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT stands_name_length CHECK (char_length(name) <= 200),
   CONSTRAINT stands_description_length CHECK (char_length(description) <= 500),
@@ -54,6 +76,7 @@ CREATE TABLE IF NOT EXISTS public.reviews (
   rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
   text text NOT NULL,
   author_name text NOT NULL,
+  user_id uuid REFERENCES auth.users(id),
   date date NOT NULL DEFAULT current_date,
   created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT reviews_text_length CHECK (char_length(text) <= 1000),
@@ -61,7 +84,7 @@ CREATE TABLE IF NOT EXISTS public.reviews (
 );
 
 -- ============================================
--- AVAILABILITY REPORTS TABLE (with report_weight from migration-005)
+-- AVAILABILITY REPORTS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.availability_reports (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -75,7 +98,7 @@ CREATE TABLE IF NOT EXISTS public.availability_reports (
 );
 
 -- ============================================
--- PRODUCT REPORTS TABLE (migration-005)
+-- PRODUCT REPORTS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.product_reports (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -88,7 +111,7 @@ CREATE TABLE IF NOT EXISTS public.product_reports (
 );
 
 -- ============================================
--- SPONSORS TABLE (migration-004)
+-- SPONSORS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.sponsors (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -110,7 +133,7 @@ CREATE TABLE IF NOT EXISTS public.sponsors (
 );
 
 -- ============================================
--- AD LEADS TABLE (migration-004)
+-- AD LEADS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.ad_leads (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -130,7 +153,9 @@ CREATE INDEX IF NOT EXISTS idx_stands_location ON public.stands (latitude, longi
 CREATE INDEX IF NOT EXISTS idx_stands_availability ON public.stands (availability_status);
 CREATE INDEX IF NOT EXISTS idx_stands_categories ON public.stands USING gin (categories);
 CREATE INDEX IF NOT EXISTS idx_stands_status ON public.stands (status);
+CREATE INDEX IF NOT EXISTS idx_stands_user_id ON public.stands (user_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_stand_id ON public.reviews (stand_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON public.reviews (user_id);
 CREATE INDEX IF NOT EXISTS idx_availability_reports_stand_id ON public.availability_reports (stand_id);
 CREATE INDEX IF NOT EXISTS idx_availability_reports_timestamp ON public.availability_reports (timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_product_reports_stand_id ON public.product_reports (stand_id);
@@ -142,80 +167,119 @@ CREATE INDEX IF NOT EXISTS idx_sponsors_active ON public.sponsors (active);
 -- ROW LEVEL SECURITY
 -- ============================================
 
--- Stands: moderated (migration-002 + migration-005 RLS fix)
+-- Admin emails: only admins can access
+ALTER TABLE public.admin_emails ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Only admins can view admin emails" ON public.admin_emails;
+CREATE POLICY "Only admins can view admin emails"
+  ON public.admin_emails FOR SELECT
+  USING (public.is_admin());
+
+DROP POLICY IF EXISTS "Only admins can modify admin emails" ON public.admin_emails;
+CREATE POLICY "Only admins can modify admin emails"
+  ON public.admin_emails FOR ALL
+  USING (public.is_admin());
+
+-- Stands: moderated with owner access
 ALTER TABLE public.stands ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Public sees approved stands"
+DROP POLICY IF EXISTS "Public sees approved stands" ON public.stands;
+DROP POLICY IF EXISTS "Public sees approved stands or own stands" ON public.stands;
+CREATE POLICY "Public sees approved stands or own stands"
   ON public.stands FOR SELECT
-  USING (status = 'approved' OR auth.role() = 'authenticated');
+  USING (
+    status = 'approved'
+    OR public.is_admin()
+    OR (auth.uid() IS NOT NULL AND user_id = auth.uid())
+  );
 
+DROP POLICY IF EXISTS "Anyone can submit a stand (pending only)" ON public.stands;
 CREATE POLICY "Anyone can submit a stand (pending only)"
   ON public.stands FOR INSERT
   WITH CHECK (status = 'pending' OR status IS NULL);
 
-CREATE POLICY "Admin can update stands"
+DROP POLICY IF EXISTS "Admin can update stands" ON public.stands;
+DROP POLICY IF EXISTS "Admin or owner can update stands" ON public.stands;
+CREATE POLICY "Admin or owner can update stands"
   ON public.stands FOR UPDATE
-  USING (auth.role() = 'authenticated');
+  USING (
+    public.is_admin()
+    OR (auth.uid() IS NOT NULL AND user_id = auth.uid())
+  );
 
-CREATE POLICY "Admin can delete stands"
+DROP POLICY IF EXISTS "Admin can delete stands" ON public.stands;
+DROP POLICY IF EXISTS "Only admin can delete stands" ON public.stands;
+CREATE POLICY "Only admin can delete stands"
   ON public.stands FOR DELETE
-  USING (auth.role() = 'authenticated');
+  USING (public.is_admin());
 
 -- Reviews
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Reviews are viewable by everyone" ON public.reviews;
 CREATE POLICY "Reviews are viewable by everyone"
   ON public.reviews FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Anyone can add a review" ON public.reviews;
 CREATE POLICY "Anyone can add a review"
   ON public.reviews FOR INSERT WITH CHECK (true);
 
 -- Availability reports
 ALTER TABLE public.availability_reports ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Reports are viewable by everyone" ON public.availability_reports;
 CREATE POLICY "Reports are viewable by everyone"
   ON public.availability_reports FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Anyone can add a report" ON public.availability_reports;
 CREATE POLICY "Anyone can add a report"
   ON public.availability_reports FOR INSERT WITH CHECK (true);
 
--- Product reports (migration-005)
+-- Product reports
 ALTER TABLE public.product_reports ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Product reports viewable by everyone" ON public.product_reports;
 CREATE POLICY "Product reports viewable by everyone"
   ON public.product_reports FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Anyone can add a product report" ON public.product_reports;
 CREATE POLICY "Anyone can add a product report"
   ON public.product_reports FOR INSERT WITH CHECK (true);
 
--- Sponsors (migration-004)
+-- Sponsors
 ALTER TABLE public.sponsors ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Active sponsors are public" ON public.sponsors;
 CREATE POLICY "Active sponsors are public"
   ON public.sponsors FOR SELECT
-  USING (active = true OR auth.role() = 'authenticated');
+  USING (active = true OR public.is_admin());
 
+DROP POLICY IF EXISTS "Admin can insert sponsors" ON public.sponsors;
 CREATE POLICY "Admin can insert sponsors"
   ON public.sponsors FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
+  WITH CHECK (public.is_admin());
 
+DROP POLICY IF EXISTS "Admin can update sponsors" ON public.sponsors;
 CREATE POLICY "Admin can update sponsors"
   ON public.sponsors FOR UPDATE
-  USING (auth.role() = 'authenticated');
+  USING (public.is_admin());
 
+DROP POLICY IF EXISTS "Admin can delete sponsors" ON public.sponsors;
 CREATE POLICY "Admin can delete sponsors"
   ON public.sponsors FOR DELETE
-  USING (auth.role() = 'authenticated');
+  USING (public.is_admin());
 
--- Ad leads (migration-004)
+-- Ad leads
 ALTER TABLE public.ad_leads ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can submit a lead" ON public.ad_leads;
 CREATE POLICY "Anyone can submit a lead"
   ON public.ad_leads FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Admin can view leads" ON public.ad_leads;
 CREATE POLICY "Admin can view leads"
   ON public.ad_leads FOR SELECT
-  USING (auth.role() = 'authenticated');
+  USING (public.is_admin());
 
 -- ============================================
 -- FUNCTION: Update stand rating when review is added
@@ -232,12 +296,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS on_review_added ON public.reviews;
 CREATE TRIGGER on_review_added
   AFTER INSERT ON public.reviews
   FOR EACH ROW EXECUTE FUNCTION public.update_stand_rating();
 
 -- ============================================
--- FUNCTION: Consensus-aware availability update (migration-005)
+-- FUNCTION: Consensus-aware availability update
 -- ============================================
 CREATE OR REPLACE FUNCTION public.update_stand_on_report()
 RETURNS trigger AS $$
@@ -274,12 +339,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS on_availability_reported ON public.availability_reports;
 CREATE TRIGGER on_availability_reported
   AFTER INSERT ON public.availability_reports
   FOR EACH ROW EXECUTE FUNCTION public.update_stand_on_report();
 
 -- ============================================
--- FUNCTION: Product consensus trigger (migration-005)
+-- FUNCTION: Product consensus trigger
 -- ============================================
 CREATE OR REPLACE FUNCTION public.update_product_availability()
 RETURNS trigger AS $$
@@ -312,12 +378,45 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS on_product_reported ON public.product_reports;
 CREATE TRIGGER on_product_reported
   AFTER INSERT ON public.product_reports
   FOR EACH ROW EXECUTE FUNCTION public.update_product_availability();
 
 -- ============================================
--- STORAGE: Photo bucket (migration-003)
+-- FUNCTION: Owner edit restriction trigger (migration-006)
+-- ============================================
+CREATE OR REPLACE FUNCTION public.enforce_owner_edit()
+RETURNS trigger AS $$
+BEGIN
+  -- Admins can edit anything
+  IF public.is_admin() THEN
+    RETURN NEW;
+  END IF;
+
+  -- Non-admins: reset critical fields to their old values
+  NEW.name := OLD.name;
+  NEW.latitude := OLD.latitude;
+  NEW.longitude := OLD.longitude;
+  NEW.address := OLD.address;
+  NEW.address_geocoded := OLD.address_geocoded;
+  NEW.categories := OLD.categories;
+  NEW.status := OLD.status;
+  NEW.user_id := OLD.user_id;
+  NEW.rating := OLD.rating;
+  NEW.review_count := OLD.review_count;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS before_stand_update ON public.stands;
+CREATE TRIGGER before_stand_update
+  BEFORE UPDATE ON public.stands
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_owner_edit();
+
+-- ============================================
+-- STORAGE: Photo bucket
 -- ============================================
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('stand-photos', 'stand-photos', true)
@@ -336,4 +435,4 @@ CREATE POLICY "Stand photos are publicly accessible"
 DROP POLICY IF EXISTS "Admin can delete stand photos" ON storage.objects;
 CREATE POLICY "Admin can delete stand photos"
   ON storage.objects FOR DELETE
-  USING (bucket_id = 'stand-photos' AND auth.role() = 'authenticated');
+  USING (bucket_id = 'stand-photos' AND public.is_admin());

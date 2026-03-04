@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import AdminRoute from './components/AdminRoute';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const BrowsePage = lazy(() => import('./pages/BrowsePage'));
@@ -13,6 +14,10 @@ const AboutPage = lazy(() => import('./pages/AboutPage'));
 const RoutePage = lazy(() => import('./pages/RoutePage'));
 const AdvertisePage = lazy(() => import('./pages/AdvertisePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const AccountPage = lazy(() => import('./pages/AccountPage'));
+const EditStandPage = lazy(() => import('./pages/EditStandPage'));
 const AdminLoginPage = lazy(() => import('./pages/admin/LoginPage'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/DashboardPage'));
 const AdminPendingPage = lazy(() => import('./pages/admin/PendingPage'));
@@ -50,10 +55,14 @@ export default function App() {
                   <Route path="/" element={<HomePage />} />
                   <Route path="/browse" element={<BrowsePage />} />
                   <Route path="/stand/:id" element={<StandDetailPage />} />
+                  <Route path="/stand/:id/edit" element={<ProtectedRoute><EditStandPage /></ProtectedRoute>} />
                   <Route path="/add" element={<AddStandPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/route" element={<RoutePage />} />
                   <Route path="/advertise" element={<AdvertisePage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
                   <Route path="*" element={<NotFoundPage />} />
                 </Routes>
               </main>

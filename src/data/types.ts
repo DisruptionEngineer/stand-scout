@@ -48,6 +48,7 @@ export interface Stand {
   paymentMethods: string[];
   selfServe: boolean;
   status?: StandModerationStatus;
+  userId?: string;
 }
 
 export interface AvailabilityReport {
@@ -66,6 +67,7 @@ export interface Review {
   rating: number;
   text: string;
   authorName: string;
+  userId?: string;
   date: string;
 }
 

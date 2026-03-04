@@ -33,6 +33,7 @@ export type Database = {
           payment_methods: string[];
           self_serve: boolean;
           status: 'pending' | 'approved' | 'rejected';
+          user_id: string | null;
           address_geocoded: string | null;
           created_at: string;
         };
@@ -64,6 +65,7 @@ export type Database = {
           payment_methods?: string[];
           self_serve?: boolean;
           status?: 'pending' | 'approved' | 'rejected';
+          user_id?: string | null;
         };
         Update: Partial<Database['public']['Tables']['stands']['Insert']>;
         Relationships: [];
@@ -75,6 +77,7 @@ export type Database = {
           rating: number;
           text: string;
           author_name: string;
+          user_id: string | null;
           date: string;
           created_at: string;
         };
@@ -84,6 +87,7 @@ export type Database = {
           rating: number;
           text: string;
           author_name: string;
+          user_id?: string | null;
           date?: string;
         };
         Update: Partial<Database['public']['Tables']['reviews']['Insert']>;
