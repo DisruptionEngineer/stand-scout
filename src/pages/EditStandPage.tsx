@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Loader2, Check, Camera, X, MapPin, Tag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { fetchStand, updateStandOwnerFields, uploadStandPhoto } from '../lib/api';
@@ -7,7 +7,6 @@ import type { Stand } from '../data/types';
 
 export default function EditStandPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const [stand, setStand] = useState<Stand | null>(null);
   const [loading, setLoading] = useState(true);
