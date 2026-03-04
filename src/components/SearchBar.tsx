@@ -6,7 +6,7 @@ interface SearchBarProps {
   placeholder?: string;
 }
 
-export default function SearchBar({ value, onChange, placeholder = 'Search stands, products...' }: SearchBarProps) {
+export default function SearchBar({ value, onChange, placeholder = 'Search stands, products, places...' }: SearchBarProps) {
   return (
     <div className="relative">
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-earth-light" />
@@ -15,7 +15,7 @@ export default function SearchBar({ value, onChange, placeholder = 'Search stand
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-sage-dark/40 bg-white text-earth text-sm placeholder:text-earth-light/60 focus:outline-none focus:ring-2 focus:ring-forest/30 focus:border-forest transition-colors"
+        className="w-full pl-10 pr-9 py-2.5 rounded-lg border border-sage-dark bg-white text-earth text-sm placeholder:text-earth-light/50 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest transition-all"
       />
       {value && (
         <button

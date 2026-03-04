@@ -33,6 +33,7 @@ export type Database = {
           payment_methods: string[];
           self_serve: boolean;
           status: 'pending' | 'approved' | 'rejected';
+          address_geocoded: string | null;
           created_at: string;
         };
         Insert: {
@@ -42,6 +43,7 @@ export type Database = {
           latitude: number;
           longitude: number;
           address: string;
+          address_geocoded?: string | null;
           categories?: string[];
           products?: string[];
           currently_available?: string[];
@@ -96,6 +98,7 @@ export type Database = {
           photo_url: string | null;
           timestamp: string;
           source: 'qr_scan' | 'app_report';
+          report_weight: number;
         };
         Insert: {
           id?: string;
@@ -104,6 +107,7 @@ export type Database = {
           products_spotted?: string[];
           photo_url?: string | null;
           source?: 'qr_scan' | 'app_report';
+          report_weight?: number;
         };
         Update: Partial<Database['public']['Tables']['availability_reports']['Insert']>;
         Relationships: [];
@@ -147,6 +151,27 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['sponsors']['Insert']>;
         Relationships: [];
       };
+      product_reports: {
+        Row: {
+          id: string;
+          stand_id: string;
+          product_name: string;
+          is_available: boolean;
+          source: 'qr_scan' | 'app_report' | 'owner_sms';
+          report_weight: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          stand_id: string;
+          product_name: string;
+          is_available: boolean;
+          source?: 'qr_scan' | 'app_report' | 'owner_sms';
+          report_weight?: number;
+        };
+        Update: Partial<Database['public']['Tables']['product_reports']['Insert']>;
+        Relationships: [];
+      };
       ad_leads: {
         Row: {
           id: string;
@@ -184,3 +209,4 @@ export type SponsorRow = Database['public']['Tables']['sponsors']['Row'];
 export type SponsorInsert = Database['public']['Tables']['sponsors']['Insert'];
 export type SponsorUpdate = Database['public']['Tables']['sponsors']['Update'];
 export type AdLeadInsert = Database['public']['Tables']['ad_leads']['Insert'];
+export type ProductReportInsert = Database['public']['Tables']['product_reports']['Insert'];

@@ -48,8 +48,8 @@ export default function CategoryFilter({ selected, onChange, compact = false }: 
               compact ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm'
             } font-medium ${
               active
-                ? 'bg-forest text-white border-forest'
-                : 'bg-white text-earth border-sage-dark/40 hover:border-forest hover:text-forest'
+                ? 'bg-forest text-white border-forest shadow-sm'
+                : 'bg-white text-earth border-sage-dark hover:border-forest hover:text-forest'
             }`}
           >
             <Icon className={compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} />

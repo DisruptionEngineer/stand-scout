@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Loader2, Camera, X } from 'lucide-react';
 import { Category } from '../../data/types';
 import { createStand, updateStandStatus, uploadStandPhoto } from '../../lib/api';
+import { sanitizeText, sanitizeUrl } from '../../lib/sanitize';
 import LocationPicker from '../../components/LocationPicker';
 
 export default function AdminAddStandPage() {
@@ -50,22 +51,27 @@ export default function AdminAddStandPage() {
     e.preventDefault();
     setSubmitting(true);
 
-    const products = form.products.split(',').map(p => p.trim()).filter(Boolean);
-    const lat = latitude ?? 41.2834;
-    const lng = longitude ?? -81.2232;
+    if (latitude === null || longitude === null) {
+      alert('Please place a pin on the map.');
+      setSubmitting(false);
+      return;
+    }
+
+    const products = form.products.split(',').map(p => sanitizeText(p.trim(), 60)).filter(Boolean);
+    const cleanWebsite = form.website ? sanitizeUrl(form.website) : undefined;
 
     const result = await createStand({
-      name: form.name,
-      ownerName: form.ownerName,
-      description: form.description,
-      address: form.address,
-      latitude: lat,
-      longitude: lng,
+      name: sanitizeText(form.name, 200),
+      ownerName: sanitizeText(form.ownerName, 80),
+      description: sanitizeText(form.description, 500),
+      address: sanitizeText(form.address, 200),
+      latitude,
+      longitude,
       phone: form.phone,
-      website: form.website || undefined,
+      website: cleanWebsite ?? undefined,
       categories: form.categories,
       products,
-      typicalAvailability: form.typicalAvailability,
+      typicalAvailability: sanitizeText(form.typicalAvailability, 120),
       paymentMethods: form.paymentMethods,
       selfServe: form.selfServe,
     });
@@ -79,10 +85,11 @@ export default function AdminAddStandPage() {
         await uploadStandPhoto(result.id, file);
       }
 
+      setSubmitting(false);
       navigate('/admin/stands');
+    } else {
+      setSubmitting(false);
     }
-
-    setSubmitting(false);
   };
 
   const inputClass = 'w-full px-3 py-2.5 rounded-xl border border-sage-dark/40 text-sm focus:outline-none focus:ring-2 focus:ring-forest/30 focus:border-forest';
@@ -124,7 +131,7 @@ export default function AdminAddStandPage() {
               latitude={latitude}
               longitude={longitude}
               onChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
-              address={form.address}
+              onAddressResolved={(addr) => { if (!form.address) setForm(prev => ({ ...prev, address: addr })); }}
             />
           </Section>
 

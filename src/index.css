@@ -1,20 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  --color-forest: #2D5F2D;
-  --color-forest-light: #3A7A3A;
-  --color-forest-dark: #1E4A1E;
-  --color-amber: #D4930D;
-  --color-amber-light: #E5A820;
-  --color-amber-dark: #B07A0A;
-  --color-cream: #FFF8E7;
-  --color-cream-dark: #F5EDD6;
-  --color-earth: #5C4033;
-  --color-earth-light: #7A5A4A;
-  --color-sage: #E8F0E2;
-  --color-sage-dark: #D0E0C8;
+  /* Heartland Field Guide — Mantua, Ohio palette */
+  --color-forest: #1B4332;
+  --color-forest-light: #2D6A4F;
+  --color-forest-dark: #0B2B1F;
+  --color-amber: #B8860B;
+  --color-amber-light: #DAA520;
+  --color-amber-dark: #8B6508;
+  --color-cream: #FAF6F0;
+  --color-cream-dark: #F0EBE3;
+  --color-earth: #2D2418;
+  --color-earth-light: #6B5E4F;
+  --color-sage: #E8E0D4;
+  --color-sage-dark: #D4CAB8;
 
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  /* Warm terracotta accent — barn red, autumn leaves */
+  --color-rust: #C1440E;
+  --color-rust-light: #D4652A;
+
+  /* Typography */
+  --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-display: 'Fraunces', 'Georgia', serif;
 }
 
 /* Leaflet map styles */
@@ -33,6 +40,35 @@ body {
   color: var(--color-earth);
 }
 
+/* Display font utility */
+.font-display {
+  font-family: var(--font-display);
+  font-variation-settings: 'SOFT' 50, 'WONK' 1;
+}
+
+/* Subtle grain texture overlay (positioned) */
+.grain-overlay {
+  position: relative;
+}
+.grain-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px;
+}
+
+/* Static grain (no pseudo-element needed) */
+.grain-overlay-static {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px;
+  pointer-events: none;
+}
+
 /* Availability status pulse */
 @keyframes pulse-green {
   0%, 100% { opacity: 1; }
@@ -43,8 +79,152 @@ body {
   animation: pulse-green 2s ease-in-out infinite;
 }
 
+/* Staggered fade-in animation */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out both;
+}
+
+.animate-delay-1 { animation-delay: 0.1s; }
+.animate-delay-2 { animation-delay: 0.2s; }
+.animate-delay-3 { animation-delay: 0.3s; }
+.animate-delay-4 { animation-delay: 0.4s; }
+.animate-delay-5 { animation-delay: 0.5s; }
+
+/* Card hover lift */
+.card-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -8px rgba(27, 67, 50, 0.12), 0 4px 8px -2px rgba(27, 67, 50, 0.06);
+}
+
 /* Custom map marker */
 .custom-marker {
   background: none !important;
   border: none !important;
+}
+
+/* Warm map tile filter */
+.leaflet-tile-pane {
+  filter: saturate(0.85) sepia(0.08) brightness(1.02);
+}
+
+/* Organic divider */
+.divider-organic {
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--color-sage-dark) 15%,
+    var(--color-amber) 50%,
+    var(--color-sage-dark) 85%,
+    transparent 100%
+  );
+  border: none;
+  border-radius: 2px;
+}
+
+/* Hero gradient mesh */
+.hero-mesh {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(45, 106, 79, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(193, 68, 14, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 80%, rgba(184, 134, 11, 0.06) 0%, transparent 50%);
+}
+
+/* Warm earthy section — kraft paper feel */
+.bg-warmth {
+  background: linear-gradient(135deg, #F5EDE0 0%, #EDE4D3 50%, #F0E8DA 100%);
+}
+
+/* Topographic contour pattern for section accents */
+.topo-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5c13.807 0 25 11.193 25 25S43.807 55 30 55 5 43.807 5 30 16.193 5 30 5zm0 8c-9.389 0-17 7.611-17 17s7.611 17 17 17 17-7.611 17-17-7.611-17-17-17zm0 8a9 9 0 110 18 9 9 0 010-18z' fill='none' stroke='%23D4CAB8' stroke-width='0.5'/%3E%3C/svg%3E");
+  background-size: 60px 60px;
+}
+
+/* Warm section break — rust-colored accent line */
+.section-break-warm {
+  height: 4px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--color-rust) 20%,
+    var(--color-amber) 50%,
+    var(--color-rust) 80%,
+    transparent 100%
+  );
+  border: none;
+  border-radius: 2px;
+  opacity: 0.35;
+}
+
+/* Handwritten-style underline accent */
+.underline-sketch {
+  background-image: url("data:image/svg+xml,%3Csvg width='200' height='8' viewBox='0 0 200 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 5 Q25 1 50 4 T100 3 T150 5 T200 3' fill='none' stroke='%23C1440E' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: bottom center;
+  background-size: 100% 8px;
+  padding-bottom: 10px;
+}
+
+/* Badge float animation */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+}
+@keyframes float-slow-alt {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(-2deg); }
+}
+.animate-float { animation: float-slow 4s ease-in-out infinite; }
+.animate-float-alt { animation: float-slow-alt 5s ease-in-out infinite; }
+
+/* Stamp/field-guide card accent */
+.card-stamp {
+  position: relative;
+}
+.card-stamp::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 4px 4px 0 0;
+}
+.card-stamp-forest::before { background: var(--color-forest); }
+.card-stamp-amber::before { background: var(--color-amber); }
+.card-stamp-rust::before { background: var(--color-rust); }
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-cream-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-sage-dark);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-earth-light);
+}
+
+/* Selection */
+::selection {
+  background: rgba(27, 67, 50, 0.15);
+  color: var(--color-earth);
 }

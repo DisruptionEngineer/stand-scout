@@ -78,3 +78,13 @@ export interface SMSEvent {
   parsedProducts: string[];
   timestamp: string;
 }
+
+export interface ProductReport {
+  id: string;
+  standId: string;
+  productName: string;
+  isAvailable: boolean;
+  source: ReportSource;
+  reportWeight: number;
+  createdAt: string;
+}

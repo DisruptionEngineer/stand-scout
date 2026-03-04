@@ -1,7 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { mockStands, mockReviews } from '../data/stands';
 import type { Stand, Review, Category } from '../data/types';
-import type { StandInsert, StandUpdate, ReviewInsert, ReportInsert, SponsorInsert, SponsorUpdate, AdLeadInsert } from './database.types';
+import type { StandInsert, StandUpdate, ReviewInsert, ReportInsert, SponsorInsert, SponsorUpdate, AdLeadInsert, ProductReportInsert } from './database.types';
 
 // ============================================
 // Row → App type mappers
@@ -13,7 +13,7 @@ function rowToStand(row: Record<string, unknown>): Stand {
     description: row.description as string,
     latitude: row.latitude as number,
     longitude: row.longitude as number,
-    address: row.address as string,
+    address: (row.address_geocoded as string) || (row.address as string),
     categories: row.categories as Category[],
     products: row.products as string[],
     currentlyAvailable: row.currently_available as string[],
@@ -112,6 +112,7 @@ export interface NewStandInput {
   ownerName: string;
   description: string;
   address: string;
+  addressGeocoded?: string;
   latitude: number;
   longitude: number;
   phone: string;
@@ -137,6 +138,7 @@ export async function createStand(input: NewStandInput): Promise<{ id: string } 
     longitude: input.longitude,
     phone: input.phone,
     website: input.website || null,
+    address_geocoded: input.addressGeocoded || null,
     categories: input.categories,
     products: input.products,
     typical_availability: input.typicalAvailability,
@@ -169,6 +171,7 @@ export async function submitReport(
     status,
     products_spotted: productsSpotted,
     source: 'app_report',
+    report_weight: 1,
   };
   const { error } = await supabase
     .from('availability_reports')
@@ -501,4 +504,74 @@ export async function submitReview(
     return false;
   }
   return true;
+}
+
+// ============================================
+// PRODUCT REPORTS
+// ============================================
+
+export async function submitProductReports(
+  standId: string,
+  products: Array<{ name: string; isAvailable: boolean }>,
+): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) {
+    return true; // mock success
+  }
+  if (products.length === 0) return true;
+
+  const rows: ProductReportInsert[] = products.map(p => ({
+    stand_id: standId,
+    product_name: p.name,
+    is_available: p.isAvailable,
+    source: 'app_report' as const,
+    report_weight: 1,
+  }));
+
+  const { error } = await supabase
+    .from('product_reports')
+    .insert(rows);
+
+  if (error) {
+    console.error('Error submitting product reports:', error);
+    return false;
+  }
+  return true;
+}
+
+export async function fetchRecentProductReports(
+  standId: string,
+): Promise<Array<{ productName: string; availableCount: number; unavailableCount: number }>> {
+  if (!isSupabaseConfigured || !supabase) return [];
+
+  const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from('product_reports')
+    .select('product_name, is_available, report_weight')
+    .eq('stand_id', standId)
+    .gte('created_at', sixHoursAgo);
+
+  if (error) {
+    console.error('Error fetching product reports:', error);
+    return [];
+  }
+
+  // Aggregate by product
+  const map = new Map<string, { available: number; unavailable: number }>();
+  for (const row of data ?? []) {
+    const key = row.product_name as string;
+    const weight = (row.report_weight as number) ?? 1;
+    const entry = map.get(key) ?? { available: 0, unavailable: 0 };
+    if (row.is_available) {
+      entry.available += weight;
+    } else {
+      entry.unavailable += weight;
+    }
+    map.set(key, entry);
+  }
+
+  return Array.from(map.entries()).map(([name, counts]) => ({
+    productName: name,
+    availableCount: counts.available,
+    unavailableCount: counts.unavailable,
+  }));
 }

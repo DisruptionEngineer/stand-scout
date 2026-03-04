@@ -72,24 +72,24 @@ export default function RoutePage() {
   };
 
   const inputClass =
-    'w-full px-3 py-2.5 rounded-xl border border-sage-dark/40 text-sm focus:outline-none focus:ring-2 focus:ring-forest/30 focus:border-forest';
+    'w-full px-3 py-2.5 rounded-lg border border-sage-dark text-sm focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest';
 
   return (
     <div className="min-h-screen bg-cream">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3 mb-2 animate-fade-up">
           <Route className="w-6 h-6 text-forest" />
-          <h1 className="text-2xl font-bold text-earth">Stands Along My Drive</h1>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold text-earth">Stands Along My Drive</h1>
         </div>
-        <p className="text-sm text-earth-light mb-6">
+        <p className="text-sm text-earth-light mb-8 animate-fade-up animate-delay-1">
           Enter a start and destination to find stands near your route.
         </p>
 
-        <form onSubmit={handleSearch} className="bg-white rounded-2xl shadow-sm border border-sage-dark/20 p-6 mb-8">
+        <form onSubmit={handleSearch} className="bg-white rounded-xl border border-sage-dark/30 p-6 mb-8 animate-fade-up animate-delay-2">
           <div className="grid sm:grid-cols-2 gap-6">
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-earth uppercase tracking-wider">Start</h3>
+                <h3 className="text-sm font-display font-semibold text-earth uppercase tracking-wider">Start</h3>
                 <button
                   type="button"
                   onClick={useMyLocation}
@@ -105,7 +105,7 @@ export default function RoutePage() {
               </div>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-earth uppercase tracking-wider mb-3">Destination</h3>
+              <h3 className="text-sm font-display font-semibold text-earth uppercase tracking-wider mb-3">Destination</h3>
               <div className="grid grid-cols-2 gap-2">
                 <input type="text" required placeholder="Latitude" value={endLat} onChange={e => { setEndLat(e.target.value); setSearched(false); }} className={inputClass} />
                 <input type="text" required placeholder="Longitude" value={endLng} onChange={e => { setEndLng(e.target.value); setSearched(false); }} className={inputClass} />
@@ -119,7 +119,7 @@ export default function RoutePage() {
               <select
                 value={radius}
                 onChange={e => { setRadius(Number(e.target.value)); setSearched(false); }}
-                className="text-sm border border-sage-dark/40 rounded-lg px-2 py-1.5 bg-white text-earth focus:outline-none focus:ring-2 focus:ring-forest/30"
+                className="text-sm border border-sage-dark rounded-lg px-2 py-1.5 bg-white text-earth focus:outline-none focus:ring-2 focus:ring-forest/20"
               >
                 <option value={5}>5 miles</option>
                 <option value={10}>10 miles</option>
@@ -129,7 +129,7 @@ export default function RoutePage() {
             </div>
             <button
               type="submit"
-              className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-xl text-sm font-semibold hover:bg-forest-light transition-colors ml-auto"
+              className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-light transition-colors ml-auto"
             >
               <Navigation className="w-4 h-4" />
               Find Stands
@@ -137,7 +137,7 @@ export default function RoutePage() {
           </div>
 
           <p className="text-xs text-earth-light mt-3">
-            Tip: right-click on Google Maps → "What's here?" to get coordinates for any location.
+            Tip: right-click on Google Maps &rarr; &ldquo;What&apos;s here?&rdquo; to get coordinates for any location.
           </p>
         </form>
 
@@ -151,7 +151,7 @@ export default function RoutePage() {
               <p className="text-sm text-earth-light mb-4">
                 {routeStands.length} stand{routeStands.length !== 1 ? 's' : ''} found within {radius} miles of your route
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {routeStands.map(stand => (
                   <StandCard key={stand.id} stand={stand} />
                 ))}
@@ -160,7 +160,7 @@ export default function RoutePage() {
           ) : (
             <div className="text-center py-16">
               <MapPin className="w-12 h-12 text-earth-light mx-auto mb-3" />
-              <p className="text-lg font-medium text-earth">No stands along this route</p>
+              <p className="text-lg font-display font-semibold text-earth">No stands along this route</p>
               <p className="text-sm text-earth-light mt-1">Try increasing the radius or exploring a different area.</p>
             </div>
           )

@@ -9,10 +9,10 @@ export default function ReviewCard({ review }: { review: Review }) {
   });
 
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm border border-sage-dark/30">
+    <div className="bg-white rounded-xl p-4 border border-sage-dark/30">
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-sage rounded-full flex items-center justify-center text-forest font-semibold text-sm">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-forest/10 rounded-lg flex items-center justify-center text-forest font-display font-bold text-sm">
             {review.authorName.charAt(0)}
           </div>
           <div>
